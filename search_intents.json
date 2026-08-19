@@ -1,0 +1,58 @@
+[
+  {
+    "search_query": "Fintech Product Manager",
+    "country_code": "IN",
+    "location_intent": "India",
+    "hypothesis_id": "hyp_001",
+    "rationale": "Standard Indian market terminology for product roles within financial technology firms, payments, and banking domains."
+  },
+  {
+    "search_query": "Payments Product Manager",
+    "country_code": "IN",
+    "location_intent": "India",
+    "hypothesis_id": "hyp_001",
+    "rationale": "Targets high-demand core payments and compliance product roles common in Indian fintech hubs like Bengaluru and Gurgaon."
+  },
+  {
+    "search_query": "B2B SaaS Product Manager",
+    "country_code": "IN",
+    "location_intent": "India",
+    "hypothesis_id": "hyp_002",
+    "rationale": "Directly captures enterprise software and workflow automation product openings in the Indian startup and SaaS ecosystem."
+  },
+  {
+    "search_query": "Workflow Automation Product Manager",
+    "country_code": "IN",
+    "location_intent": "India",
+    "hypothesis_id": "hyp_002",
+    "rationale": "Targets companies building internal tooling, enterprise operations, and case management platforms."
+  },
+  {
+    "search_query": "Technical Product Manager",
+    "country_code": "IN",
+    "location_intent": "India",
+    "hypothesis_id": "hyp_003",
+    "rationale": "Standard title in Indian tech markets for product managers handling system integration, API workflows, and QA oversight."
+  },
+  {
+    "search_query": "Release Management Product Role",
+    "country_code": "IN",
+    "location_intent": "India",
+    "hypothesis_id": "hyp_003",
+    "rationale": "Captures roles focused on UAT leadership, deployment readiness, and enterprise release governance."
+  },
+  {
+    "search_query": "AI Product Manager",
+    "country_code": "IN",
+    "location_intent": "India",
+    "hypothesis_id": "hyp_004",
+    "rationale": "Widely used market terminology for product managers driving generative AI, ML integration, and automation initiatives."
+  },
+  {
+    "search_query": "Applied AI Product Lead",
+    "country_code": "IN",
+    "location_intent": "India",
+    "hypothesis_id": "hyp_004",
+    "rationale": "Captures enterprise AI transformation and solutioning roles across GCCs and tech firms in India."
+  }
+]

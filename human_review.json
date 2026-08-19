@@ -1,0 +1,110 @@
+{
+  "updated_at": "2026-08-16T19:05:07.192537+00:00",
+  "decisions": {
+    "job_0129": {
+      "job_id": "job_0129",
+      "verdict": "APPLY",
+      "priority": "HIGH",
+      "notes": "Strong fit with Amex compliance background",
+      "reviewed_at": "2026-08-16T17:14:33.592019+00:00"
+    },
+    "job_0166": {
+      "job_id": "job_0166",
+      "verdict": "APPLY",
+      "priority": "MEDIUM",
+      "notes": "",
+      "reviewed_at": "2026-08-16T17:15:04.353514+00:00"
+    },
+    "job_0121": {
+      "job_id": "job_0121",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "Location of the job is US",
+      "reviewed_at": "2026-08-16T18:03:17.589244+00:00"
+    },
+    "job_0098": {
+      "job_id": "job_0098",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "Location is US",
+      "reviewed_at": "2026-08-16T18:04:06.960697+00:00"
+    },
+    "job_0067": {
+      "job_id": "job_0067",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "Location is US",
+      "reviewed_at": "2026-08-16T18:04:23.029741+00:00"
+    },
+    "job_0146": {
+      "job_id": "job_0146",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "Location is US",
+      "reviewed_at": "2026-08-16T18:04:33.417795+00:00"
+    },
+    "job_0149": {
+      "job_id": "job_0149",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "Location is US",
+      "reviewed_at": "2026-08-16T18:04:50.902651+00:00"
+    },
+    "job_0043": {
+      "job_id": "job_0043",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "Location is US",
+      "reviewed_at": "2026-08-16T18:45:49.553852+00:00"
+    },
+    "job_0073": {
+      "job_id": "job_0073",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "Location is US",
+      "reviewed_at": "2026-08-16T18:45:57.846205+00:00"
+    },
+    "job_0142": {
+      "job_id": "job_0142",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "Location is US",
+      "reviewed_at": "2026-08-16T18:46:08.304428+00:00"
+    },
+    "job_0124": {
+      "job_id": "job_0124",
+      "verdict": "MAYBE",
+      "priority": "MEDIUM",
+      "notes": "",
+      "reviewed_at": "2026-08-16T18:50:15.021128+00:00"
+    },
+    "job_0123": {
+      "job_id": "job_0123",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "Location is US",
+      "reviewed_at": "2026-08-16T18:59:53.749205+00:00"
+    },
+    "job_0031": {
+      "job_id": "job_0031",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "Location is US",
+      "reviewed_at": "2026-08-16T19:00:32.936011+00:00"
+    },
+    "job_0079": {
+      "job_id": "job_0079",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "Location is US",
+      "reviewed_at": "2026-08-16T19:00:45.239670+00:00"
+    },
+    "job_0019": {
+      "job_id": "job_0019",
+      "verdict": "SKIP",
+      "priority": "MEDIUM",
+      "notes": "",
+      "reviewed_at": "2026-08-16T19:05:07.192537+00:00"
+    }
+  }
+}

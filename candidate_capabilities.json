@@ -1,0 +1,109 @@
+{
+  "candidate_summary": "Tushar Chaand is an Associate in Digital Product Management with over 5 years of experience at American Express and Amazon, specializing in enterprise fintech platforms, payments, compliance, and case management. He has proven expertise in product solutioning, UAT leadership, cross-functional release delivery, and API debugging, managing workflows processing 250K\u2013300K monthly cases.",
+  "capabilities": [
+    {
+      "capability": "Product Discovery and Requirements Definition",
+      "evidence": [
+        "Partnered with Product Owners and Engineering to translate business and compliance requirements into user stories, test scenarios, and acceptance criteria.",
+        "Planned UAT strategy and represented QA in solutioning and discovery calls, feeding testability and edge-case input directly into requirement definition before build."
+      ],
+      "proficiency": "demonstrated",
+      "recency": "recent",
+      "transferable_context": "Applicable in any product development environment requiring conversion of ambiguous business needs into structured engineering backlogs."
+    },
+    {
+      "capability": "UAT Leadership and Release Readiness",
+      "evidence": [
+        "Led end-to-end product acceptance and UAT strategy for RBST and PBST on the Control Management Team's CMT portal.",
+        "Led UAT for a 3-system KYC document collection flow (CLIC, multilingual iForms, Griffin storage), identifying 40+ defects pre-launch.",
+        "Contributed to release readiness decisions by synthesizing defect data, user feedback, and operational metrics across quarterly release cycles."
+      ],
+      "proficiency": "demonstrated",
+      "recency": "recent",
+      "transferable_context": "Valuable for managing complex enterprise rollouts and quality assurance across multi-system architectures."
+    },
+    {
+      "capability": "Technical Troubleshooting and Root Cause Analysis",
+      "evidence": [
+        "Diagnosed a critical production API failure during retesting\u2014a frontend/backend type mismatch in workbasket naming\u2014and led a 2-day RCA with engineering.",
+        "Ran root-cause analysis on 500K+ customer interactions to identify systemic failure points across fulfilment and support workflows at Amazon."
+      ],
+      "proficiency": "demonstrated",
+      "recency": "recent",
+      "transferable_context": "Essential for diagnosing complex distributed system issues and collaborating with engineering teams to resolve production defects."
+    },
+    {
+      "capability": "AI Product Solutioning",
+      "evidence": [
+        "Currently part of the solutioning team for an AI-assisted case processing initiative for the CMT portal using call-transcript analysis."
+      ],
+      "proficiency": "demonstrated",
+      "recency": "recent",
+      "transferable_context": "Applicable to designing and deploying modern AI/ML-driven features in enterprise customer support and operational workflows."
+    },
+    {
+      "capability": "Data Analysis and Process Automation",
+      "evidence": [
+        "Built SQL/Python dashboards for compliance and operational KPIs, cutting manual reporting effort by 20%.",
+        "Used Power BI/Tableau to surface defect trends feeding backlog prioritization."
+      ],
+      "proficiency": "demonstrated",
+      "recency": "recent",
+      "transferable_context": "Enables data-driven decision making, metric tracking, and efficiency improvements across operations and product teams."
+    },
+    {
+      "capability": "Product Strategy and Roadmapping",
+      "evidence": [
+        "Core competencies listed include Product Discovery, MVP Definition, PRDs, Roadmapping, User Stories, Acceptance Criteria, Backlog Prioritization, and Sprint Planning."
+      ],
+      "proficiency": "adjacent",
+      "recency": "recent",
+      "transferable_context": "Can be applied to define end-to-end product lifecycles for new SaaS or fintech product lines."
+    }
+  ],
+  "responsibilities": [
+    "Translate business and compliance requirements into user stories, test scenarios, and acceptance criteria",
+    "Contribute to sprint planning and backlog grooming",
+    "Lead UAT strategy and manage product acceptance",
+    "Synthesize defect data, user feedback, and operational metrics for release readiness",
+    "Act as a bridge between Business, Compliance, and Engineering",
+    "Diagnose critical production API failures and lead root cause analysis",
+    "Build SQL/Python dashboards and use Power BI/Tableau for compliance and operational KPIs"
+  ],
+  "domain_exposure": [
+    "Fintech",
+    "Enterprise Platforms",
+    "Payments",
+    "Compliance",
+    "Case Management",
+    "KYC",
+    "Dispute & Chargeback Workflows",
+    "Regulatory Compliance (RBST & PBST)",
+    "B2B SaaS"
+  ],
+  "tools_and_technologies": [
+    "PEGA",
+    "ACE",
+    "CLIC",
+    "CMT portal",
+    "SQL",
+    "Python",
+    "Power BI",
+    "Tableau",
+    "Excel",
+    "Jira",
+    "Rally",
+    "Confluence",
+    "SharePoint",
+    "Griffin storage",
+    "multilingual iForms"
+  ],
+  "business_problems_solved": [
+    "Improved compliance accuracy by 15% and reduced edge-case failures pre-release by identifying critical workflow gaps through defect trend analysis",
+    "Validated 250K\u2013300K monthly case flows for regulatory accuracy, reducing compliance risk ahead of audits",
+    "Identified 40+ pre-launch defects during a 3-system cross-border KYC automation rollout",
+    "Resolved a silent production-impacting API failure caused by a frontend/backend type mismatch",
+    "Cut manual reporting effort by 20% through custom SQL/Python dashboards",
+    "Prevented case-selection bias in automated assignment logic by applying operational insight during Smart Assign solutioning"
+  ]
+}

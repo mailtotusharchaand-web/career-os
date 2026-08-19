@@ -1,0 +1,60 @@
+[
+  {
+    "hypothesis_id": "hyp_001",
+    "hypothesis": "Enterprise Fintech Product Manager (Payments & Compliance)",
+    "rationale": "Tushar's extensive background at American Express in enterprise fintech platforms, payments, and regulatory compliance (RBST/PBST) makes him an ideal fit for core product management roles in financial technology. His hands-on experience managing high-volume case workflows (250K-300K monthly) and KYC document flows provides immediate domain authority.",
+    "supporting_capabilities": [
+      "Product Discovery and Requirements Definition",
+      "UAT Leadership and Release Readiness",
+      "Product Strategy and Roadmapping"
+    ],
+    "evidence": "Associate in Digital Product Management at American Express managing RBST and PBST on the Control Management Team's CMT portal, validating 250K-300K monthly case flows and executing a 3-system KYC document collection rollout.",
+    "opportunity_type": "direct"
+  },
+  {
+    "hypothesis_id": "hyp_002",
+    "hypothesis": "B2B SaaS Product Manager for Workflow Automation & Case Management Platforms",
+    "rationale": "The core functional toolkit Tushar used to build enterprise compliance workflows in PEGA and custom portals directly applies to B2B SaaS companies building internal tooling, customer support, or operational case management software. His experience bridging business requirements with engineering backlogs enables him to scale complex enterprise platforms.",
+    "supporting_capabilities": [
+      "Product Discovery and Requirements Definition",
+      "Technical Troubleshooting and Root Cause Analysis",
+      "Product Strategy and Roadmapping"
+    ],
+    "evidence": "Led end-to-end product acceptance and UAT strategy for internal enterprise portals, translating compliance rules into user stories and managing workflows processing hundreds of thousands of monthly cases.",
+    "opportunity_type": "adjacent"
+  },
+  {
+    "hypothesis_id": "hyp_003",
+    "hypothesis": "Technical Product Manager for Enterprise Quality Assurance and Release Management",
+    "rationale": "Tushar's strong technical troubleshooting abilities\u2014such as diagnosing frontend/backend API type mismatches and leading 2-day RCAs with engineering\u2014position him well for technical product or release management roles that require deep quality assurance oversight and system integration expertise.",
+    "supporting_capabilities": [
+      "Technical Troubleshooting and Root Cause Analysis",
+      "UAT Leadership and Release Readiness"
+    ],
+    "evidence": "Diagnosed a critical production API failure during retesting (frontend/backend type mismatch in workbasket naming) and led a 2-day RCA with engineering; identified 40+ defects pre-launch during a 3-system KYC rollout.",
+    "opportunity_type": "transferable"
+  },
+  {
+    "hypothesis_id": "hyp_004",
+    "hypothesis": "AI Product Manager for Enterprise Operations and Call-Transcript Analytics",
+    "rationale": "By actively participating in solutioning teams for AI-assisted case processing using call-transcript analysis, Tushar has early hands-on exposure to applying generative AI/ML solutions to operational workflows. This unique combination of compliance domain knowledge and emerging AI product work enables a pivot into applied enterprise AI product roles.",
+    "supporting_capabilities": [
+      "AI Product Solutioning",
+      "Data Analysis and Process Automation"
+    ],
+    "evidence": "Currently part of the solutioning team for an AI-assisted case processing initiative for the CMT portal using call-transcript analysis.",
+    "opportunity_type": "unexpected"
+  },
+  {
+    "hypothesis_id": "hyp_005",
+    "hypothesis": "Senior Product Manager / Head of Platform Operations & Compliance Solutions",
+    "rationale": "With a strong track record of reducing compliance risk, cutting manual reporting efforts via SQL/Python automation, and leading cross-functional release cycles across major brands like American Express and Amazon, Tushar is well-positioned to step into a higher-scope platform ownership role with targeted leadership upskilling.",
+    "supporting_capabilities": [
+      "Product Strategy and Roadmapping",
+      "Data Analysis and Process Automation",
+      "UAT Leadership and Release Readiness"
+    ],
+    "evidence": "Improved compliance accuracy by 15%, cut manual reporting effort by 20% using custom SQL/Python dashboards, and managed complex multi-system product rollouts across quarterly release cycles.",
+    "opportunity_type": "stretch"
+  }
+]

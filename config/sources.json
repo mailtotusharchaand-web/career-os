@@ -1,0 +1,28 @@
+{
+  "sources": {
+    "indeed": {
+      "adapter": "jobspy",
+      "geographic_coverage": ["global", "IN"],
+      "supports_location_param": true,
+      "supports_country_param": true,
+      "country_code_map": {
+        "IN": "india"
+      },
+      "enabled": true
+    },
+    "naukri": {
+      "adapter": "jobspy",
+      "geographic_coverage": ["IN"],
+      "supports_location_param": true,
+      "supports_country_param": false,
+      "enabled": true
+    },
+    "linkedin": {
+      "adapter": "jobspy",
+      "geographic_coverage": ["global", "IN"],
+      "supports_location_param": true,
+      "supports_country_param": false,
+      "enabled": true
+    }
+  }
+}

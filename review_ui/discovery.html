@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Career OS — Discovery Quality Review</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body class="dark-theme">
+  <!-- Top Navigation Bar -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="brand">
+        <span class="brand-title">CAREER OS</span>
+        <span class="brand-badge" style="background: rgba(56, 189, 248, 0.15); color: var(--accent-blue); border-color: rgba(56, 189, 248, 0.3);">DISCOVERY QUALITY REVIEW</span>
+      </div>
+      <nav class="mode-nav" style="display: flex; gap: 0.5rem; margin-left: 1rem;">
+        <a href="/discovery" class="nav-tab active" style="padding: 0.25rem 0.75rem; border-radius: 6px; font-size: 0.8125rem; font-weight: 500; text-decoration: none; color: var(--accent-blue); background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.2);">Discovery Audit (129)</a>
+        <a href="/" class="nav-tab" style="padding: 0.25rem 0.75rem; border-radius: 6px; font-size: 0.8125rem; font-weight: 500; text-decoration: none; color: var(--text-secondary); background: transparent; border: 1px solid transparent;">Evaluation Review (93)</a>
+      </nav>
+    </div>
+
+    <div class="header-right">
+      <div class="progress-pill">
+        <span class="progress-label">Reviewed:</span>
+        <span class="progress-value" id="globalProgress">0 / 129</span>
+        <span class="progress-sub" id="queueProgress">(Direct: 0 / 35)</span>
+      </div>
+      <button class="action-btn secondary" id="summaryBtn" title="View Discovery Breakdown Summary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+        Summary
+      </button>
+      <button class="action-btn icon-only" id="shortcutsBtn" title="Keyboard Shortcuts">
+        <kbd>?</kbd>
+      </button>
+    </div>
+  </header>
+
+  <!-- Filter Toolbar -->
+  <div class="filter-toolbar" style="flex-wrap: wrap; gap: 0.625rem; padding: 0.5rem 1.25rem; background-color: #152033; border-bottom: 1px solid var(--border-color);">
+    <!-- Opportunity Type -->
+    <div class="filter-group">
+      <span class="filter-label">Type:</span>
+      <nav class="filter-nav" id="typeNav">
+        <button class="filter-btn active" data-type="ALL">All <span class="badge" id="badgeTypeAll">129</span></button>
+        <button class="filter-btn" data-type="direct">Direct <span class="badge" id="badgeTypeDirect">0</span></button>
+        <button class="filter-btn" data-type="adjacent">Adjacent <span class="badge" id="badgeTypeAdjacent">0</span></button>
+        <button class="filter-btn" data-type="transferable">Transferable <span class="badge" id="badgeTypeTransferable">0</span></button>
+        <button class="filter-btn" data-type="unexpected">Unexpected <span class="badge" id="badgeTypeUnexpected">0</span></button>
+        <button class="filter-btn" data-type="stretch">Stretch <span class="badge" id="badgeTypeStretch">0</span></button>
+      </nav>
+    </div>
+
+    <div class="filter-divider"></div>
+
+    <!-- LLM Recommendation -->
+    <div class="filter-group">
+      <span class="filter-label">LLM Rec:</span>
+      <select id="llmRecSelect" style="background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.25rem 0.5rem; font-size: 0.8125rem; font-family: var(--font-sans); outline: none;">
+        <option value="ALL">All LLM Recommendations</option>
+        <option value="STRONG_APPLY">Strong Apply</option>
+        <option value="APPLY">Apply</option>
+        <option value="CONSIDER">Consider</option>
+        <option value="LONG_SHOT">Long Shot</option>
+        <option value="SKIP">Skip</option>
+        <option value="GATE_REJECTED">Gate Rejected</option>
+      </select>
+    </div>
+
+    <div class="filter-divider"></div>
+
+    <!-- Human Review -->
+    <div class="filter-group">
+      <span class="filter-label">Human Review:</span>
+      <select id="humanReviewSelect" style="background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.25rem 0.5rem; font-size: 0.8125rem; font-family: var(--font-sans); outline: none;">
+        <option value="ALL">All Statuses</option>
+        <option value="UNREVIEWED">Unreviewed</option>
+        <option value="REVIEWED">Reviewed (Any Verdict)</option>
+        <option value="RELEVANT">Relevant</option>
+        <option value="ADJACENT">Adjacent</option>
+        <option value="WEAK">Weak</option>
+        <option value="IRRELEVANT">Irrelevant</option>
+      </select>
+    </div>
+
+    <div class="filter-divider"></div>
+
+    <!-- Search Intent -->
+    <div class="filter-group">
+      <span class="filter-label">Intent:</span>
+      <select id="intentSelect" style="max-width: 170px; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.25rem 0.5rem; font-size: 0.8125rem; font-family: var(--font-sans); outline: none; text-overflow: ellipsis;">
+        <option value="ALL">All Search Intents (8)</option>
+      </select>
+    </div>
+
+    <!-- Source -->
+    <div class="filter-group">
+      <span class="filter-label">Source:</span>
+      <select id="sourceSelect" style="background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.25rem 0.5rem; font-size: 0.8125rem; font-family: var(--font-sans); outline: none;">
+        <option value="ALL">All Sources</option>
+        <option value="indeed">Indeed</option>
+        <option value="linkedin">LinkedIn</option>
+      </select>
+    </div>
+
+    <div class="filter-divider"></div>
+
+    <!-- Opportunity Status Filter -->
+    <div class="filter-group">
+      <span class="filter-label">Opp Status:</span>
+      <select id="oppStatusSelect" style="background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.25rem 0.5rem; font-size: 0.8125rem; font-family: var(--font-sans); outline: none;">
+        <option value="ALL">All Opp Statuses</option>
+        <option value="AVAILABLE">Available</option>
+        <option value="EXPIRED">Expired</option>
+        <option value="UNKNOWN">Unknown</option>
+      </select>
+    </div>
+
+    <!-- Application Status Filter -->
+    <div class="filter-group">
+      <span class="filter-label">App Status:</span>
+      <select id="appStatusSelect" style="background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.25rem 0.5rem; font-size: 0.8125rem; font-family: var(--font-sans); outline: none;">
+        <option value="ALL">All App Statuses</option>
+        <option value="NOT_APPLIED">Not Applied</option>
+        <option value="READY_TO_APPLY">Ready to Apply</option>
+        <option value="APPLIED">Applied</option>
+        <option value="RECRUITER_CONTACT">Recruiter Contact</option>
+        <option value="INTERVIEW">Interview</option>
+        <option value="REJECTED">Rejected</option>
+        <option value="WITHDRAWN">Withdrawn</option>
+        <option value="OFFER">Offer</option>
+      </select>
+    </div>
+
+    <!-- Quick Search -->
+    <div class="filter-group" style="margin-left: auto;">
+      <input type="text" id="searchInput" placeholder="Search title, company, ID..." style="background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.25rem 0.6rem; font-size: 0.8125rem; font-family: var(--font-sans); outline: none; width: 170px;">
+    </div>
+  </div>
+
+  <!-- 3-Panel Workstation Layout -->
+  <main class="discovery-workstation" id="workstation">
+    <!-- LEFT PANEL: Opportunity Navigator -->
+    <aside class="panel-navigator" id="leftNavigator">
+      <div class="navigator-header">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);" id="navigatorCountLabel">
+            Opportunities (129)
+          </span>
+          <button id="resetFiltersBtn" style="background: transparent; border: none; font-size: 0.72rem; color: var(--accent-blue); cursor: pointer; text-decoration: underline; padding: 0;">Reset</button>
+        </div>
+      </div>
+      <div class="navigator-scroll-list" id="navigatorList">
+        <!-- Populated dynamically by discovery.js -->
+      </div>
+    </aside>
+
+    <!-- CENTER PANEL: Selected Opportunity & Evidence & Job Description -->
+    <section class="panel-content" id="centerJobView">
+      <div class="panel-content-inner">
+        <!-- 1. Job Identity Header Card -->
+        <div class="card job-card" id="jobCard" style="padding: 1.25rem;">
+          <div class="job-header" style="border-bottom: none; padding-bottom: 0;">
+            <div class="job-meta-top" style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.5rem;">
+              <span class="job-queue-tag" id="jobTypeTag">DIRECT</span>
+              <span class="job-id-tag" id="jobIdTag" style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent-blue); font-weight: 600;">disc_0001</span>
+              <span class="job-geo-tag" id="jobSourceTag">INDEED</span>
+              <span class="job-geo-tag" style="background: rgba(16, 185, 129, 0.1); color: var(--accent-emerald); border-color: rgba(16, 185, 129, 0.2);">INDIA</span>
+              <span class="job-location" id="jobLocation" style="font-size: 0.75rem; color: var(--text-secondary); background: var(--bg-subtle); padding: 0.15rem 0.45rem; border-radius: 4px; border: 1px solid var(--border-color);">Bengaluru, Karnataka, India</span>
+              <span class="job-salary" id="jobSalary" style="font-size: 0.75rem; color: var(--accent-emerald); font-family: var(--font-mono); background: var(--bg-subtle); padding: 0.15rem 0.45rem; border-radius: 4px; border: 1px solid var(--border-color);">Salary Not Listed</span>
+            </div>
+
+            <h1 class="job-title" id="jobTitle" style="font-size: 1.35rem; font-weight: 700; color: var(--text-primary); line-height: 1.3;">Loading discovery opportunities...</h1>
+            <div class="job-company-row" style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.35rem;">
+              <h2 class="job-company" id="jobCompany" style="font-size: 1rem; font-weight: 600; color: var(--accent-blue);">—</h2>
+              <a href="#" target="_blank" rel="noopener noreferrer" class="view-job-link" id="viewJobLink" style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; font-weight: 600; color: var(--accent-blue); text-decoration: none; background: rgba(56, 189, 248, 0.1); padding: 0.3rem 0.65rem; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.25);">
+                View on Source
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. "WHY WAS THIS DISCOVERED?" Provenance Card -->
+        <div class="evaluation-section card" style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; padding: 1.25rem;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+            <h3 style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent-blue); display: flex; align-items: center; gap: 0.5rem;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+              Discovery Provenance (Origin Evidence)
+            </h3>
+            <span id="provenanceTypePill" style="font-size: 0.75rem; font-family: var(--font-mono); font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 4px; background: rgba(56, 189, 248, 0.15); color: var(--accent-blue);">DIRECT OPPORTUNITY</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem;">
+            <div style="background: var(--bg-card); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color);">
+              <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 0.25rem;">Search Intent Query</div>
+              <div id="provQuery" style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); font-family: var(--font-mono);">—</div>
+            </div>
+            <div style="background: var(--bg-card); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color);">
+              <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 0.25rem;">Opportunity Hypothesis</div>
+              <div id="provHypothesis" style="font-size: 0.8125rem; font-weight: 500; color: var(--text-primary);">—</div>
+            </div>
+            <div style="background: var(--bg-card); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color);">
+              <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 0.25rem;">Source & Retrieval Time</div>
+              <div id="provSourceTime" style="font-size: 0.75rem; color: var(--text-secondary); font-family: var(--font-mono);">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. LLM Evaluation & Candidate Fit Assessment (Informational Context) -->
+        <div class="evaluation-section card" id="llmEvalSection" style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+            <h3 style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent-emerald); display: flex; align-items: center; gap: 0.5rem;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+              LLM Candidate Fit Assessment (Informational)
+            </h3>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span id="llmRecBadge" style="font-size: 0.8125rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 4px; background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald); border: 1px solid var(--accent-emerald);">CONSIDER</span>
+              <span id="llmScorePill" style="font-size: 0.8125rem; font-family: var(--font-mono); font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 4px; background: var(--bg-hover); color: var(--text-primary); border: 1px solid var(--border-color);">SCORE: 75/100</span>
+            </div>
+          </div>
+
+          <!-- Fit Scores Grid -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(115px, 1fr)); gap: 0.5rem; margin-bottom: 0.75rem;">
+            <div style="background: var(--bg-card); padding: 0.5rem 0.6rem; border-radius: 6px; border: 1px solid var(--border-color); text-align: center;">
+              <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Role Fit</div>
+              <div id="llmRoleFit" style="font-size: 0.9375rem; font-weight: 700; font-family: var(--font-mono); color: var(--text-primary); margin-top: 0.15rem;">—</div>
+            </div>
+            <div style="background: var(--bg-card); padding: 0.5rem 0.6rem; border-radius: 6px; border: 1px solid var(--border-color); text-align: center;">
+              <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Experience Fit</div>
+              <div id="llmExpFit" style="font-size: 0.9375rem; font-weight: 700; font-family: var(--font-mono); color: var(--text-primary); margin-top: 0.15rem;">—</div>
+            </div>
+            <div style="background: var(--bg-card); padding: 0.5rem 0.6rem; border-radius: 6px; border: 1px solid var(--border-color); text-align: center;">
+              <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Transferable</div>
+              <div id="llmTransFit" style="font-size: 0.9375rem; font-weight: 700; font-family: var(--font-mono); color: var(--text-primary); margin-top: 0.15rem;">—</div>
+            </div>
+            <div style="background: var(--bg-card); padding: 0.5rem 0.6rem; border-radius: 6px; border: 1px solid var(--border-color); text-align: center;">
+              <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Seniority Fit</div>
+              <div id="llmSenFit" style="font-size: 0.9375rem; font-weight: 700; font-family: var(--font-mono); color: var(--text-primary); margin-top: 0.15rem;">—</div>
+            </div>
+            <div style="background: var(--bg-card); padding: 0.5rem 0.6rem; border-radius: 6px; border: 1px solid var(--border-color); text-align: center;">
+              <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">P(Obtain)</div>
+              <div id="llmProbObtain" style="font-size: 0.9375rem; font-weight: 700; font-family: var(--font-mono); color: var(--accent-blue); margin-top: 0.15rem;">—</div>
+            </div>
+            <div style="background: var(--bg-card); padding: 0.5rem 0.6rem; border-radius: 6px; border: 1px solid var(--border-color); text-align: center;">
+              <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Difficulty / Upside</div>
+              <div id="llmDiffUpside" style="font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); margin-top: 0.25rem;">—</div>
+            </div>
+          </div>
+
+          <!-- Strengths & Gaps -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.75rem; margin-bottom: 0.75rem;">
+            <div style="background: var(--bg-card); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color);">
+              <div style="font-size: 0.7rem; color: var(--accent-emerald); text-transform: uppercase; font-weight: 700; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.35rem;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                Key Strengths & Alignment
+              </div>
+              <ul id="llmStrengthsList" style="margin: 0; padding-left: 1.2rem; font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.45;"></ul>
+            </div>
+            <div style="background: var(--bg-card); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color);">
+              <div style="font-size: 0.7rem; color: var(--accent-amber); text-transform: uppercase; font-weight: 700; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.35rem;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Missing Critical Skills / Gaps
+              </div>
+              <ul id="llmGapsList" style="margin: 0; padding-left: 1.2rem; font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.45;"></ul>
+            </div>
+          </div>
+
+          <!-- Reasoning -->
+          <div style="background: var(--bg-card); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color);">
+            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 0.25rem;">LLM Evaluation Reasoning</div>
+            <div id="llmReasoning" style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.5;">—</div>
+          </div>
+        </div>
+
+        <!-- 4. Full Job Description -->
+        <div class="job-description-section card" style="padding: 1.25rem;">
+          <h3 style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">Full Job Description</h3>
+          <div class="job-description-content" id="jobDescription" style="background: var(--bg-subtle); padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border-color); font-size: 0.875rem; line-height: 1.6; white-space: pre-wrap; color: var(--text-secondary);">
+            Loading description...
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: Human Review Controls -->
+    <aside class="panel-decision" id="rightDecisionPanel">
+      <div class="card decision-card" id="decisionCard" style="border: none; background: transparent; padding: 0;">
+        <div class="decision-header">
+          <h3 class="decision-title" style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">Human Assessment</h3>
+          <span class="decision-status" id="decisionStatus">UNREVIEWED</span>
+        </div>
+
+        <!-- Question 1: Discovery Verdict -->
+        <div class="decision-group" style="margin-top: 0.85rem;">
+          <label class="decision-label" style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.35rem; display: block; font-size: 0.8125rem;">
+            1. Discovery Verdict:
+          </label>
+          <div class="verdict-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.4rem;">
+            <button class="verdict-btn" data-verdict="RELEVANT">
+              <span class="verdict-key">1</span>
+              <span class="verdict-text">RELEVANT</span>
+            </button>
+            <button class="verdict-btn" data-verdict="ADJACENT">
+              <span class="verdict-key">2</span>
+              <span class="verdict-text">ADJACENT</span>
+            </button>
+            <button class="verdict-btn" data-verdict="WEAK">
+              <span class="verdict-key">3</span>
+              <span class="verdict-text">WEAK</span>
+            </button>
+            <button class="verdict-btn" data-verdict="IRRELEVANT">
+              <span class="verdict-key">4</span>
+              <span class="verdict-text">IRRELEVANT</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Question 2: Dynamic Discovery Counterfactual -->
+        <div class="decision-group" style="margin-top: 0.85rem;">
+          <label class="decision-label" style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.3rem; display: block; font-size: 0.8125rem;">
+            2. Found without dynamic discovery?
+          </label>
+          <div class="cf-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.3rem;">
+            <button class="cf-btn" data-cf="YES" style="padding: 0.4rem 0.2rem; font-size: 0.72rem; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary); cursor: pointer; text-align: center;">
+              <span style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-muted); display: block;">[Y]</span>
+              YES
+            </button>
+            <button class="cf-btn" data-cf="PROBABLY" style="padding: 0.4rem 0.2rem; font-size: 0.72rem; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary); cursor: pointer; text-align: center;">
+              <span style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-muted); display: block;">[P]</span>
+              PROB
+            </button>
+            <button class="cf-btn" data-cf="NO" style="padding: 0.4rem 0.2rem; font-size: 0.72rem; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary); cursor: pointer; text-align: center;">
+              <span style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-muted); display: block;">[N]</span>
+              NO
+            </button>
+            <button class="cf-btn" data-cf="UNSURE" style="padding: 0.4rem 0.2rem; font-size: 0.72rem; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary); cursor: pointer; text-align: center;">
+              <span style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-muted); display: block;">[U]</span>
+              UNSURE
+            </button>
+          </div>
+        </div>
+
+        <!-- Question 3: Triage Priority -->
+        <div class="decision-group" style="margin-top: 0.85rem;">
+          <label class="decision-label" style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.3rem; display: block; font-size: 0.8125rem;">
+            3. Triage Priority:
+          </label>
+          <div class="priority-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.3rem;">
+            <button class="priority-btn" data-priority="HIGH" style="padding: 0.4rem 0.25rem; font-size: 0.72rem; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary); cursor: pointer; text-align: center;">
+              <span style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-muted); display: block;">[H]</span>
+              HIGH
+            </button>
+            <button class="priority-btn" data-priority="MEDIUM" style="padding: 0.4rem 0.25rem; font-size: 0.72rem; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary); cursor: pointer; text-align: center;">
+              <span style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-muted); display: block;">[M]</span>
+              MEDIUM
+            </button>
+            <button class="priority-btn" data-priority="LOW" style="padding: 0.4rem 0.25rem; font-size: 0.72rem; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary); cursor: pointer; text-align: center;">
+              <span style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-muted); display: block;">[L]</span>
+              LOW
+            </button>
+          </div>
+        </div>
+
+        <!-- Question 4: Opportunity Status (Actionable / Expired) -->
+        <div class="decision-group" style="margin-top: 0.85rem;">
+          <label class="decision-label" style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.3rem; display: block; font-size: 0.8125rem;">
+            4. Opportunity Status:
+          </label>
+          <div class="opp-status-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.3rem;">
+            <button class="opp-status-btn" data-opp="UNKNOWN" style="padding: 0.4rem 0.2rem; font-size: 0.72rem; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary); cursor: pointer; text-align: center;">
+              <span style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-muted); display: block;">[?]</span>
+              UNKNOWN
+            </button>
+            <button class="opp-status-btn" data-opp="AVAILABLE" style="padding: 0.4rem 0.2rem; font-size: 0.72rem; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary); cursor: pointer; text-align: center;">
+              <span style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--accent-emerald); display: block;">●</span>
+              AVAILABLE
+            </button>
+            <button class="opp-status-btn" data-opp="EXPIRED" style="padding: 0.4rem 0.2rem; font-size: 0.72rem; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary); cursor: pointer; text-align: center;">
+              <span style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--accent-rose); display: block;">✕</span>
+              EXPIRED
+            </button>
+          </div>
+        </div>
+
+        <!-- Question 5: Application Lifecycle Status -->
+        <div class="decision-group" style="margin-top: 0.85rem;">
+          <label class="decision-label" style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.3rem; display: block; font-size: 0.8125rem;">
+            5. Application Status:
+          </label>
+          <div class="app-status-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.3rem;">
+            <button class="app-status-btn selected" data-app="NOT_APPLIED" style="padding: 0.35rem 0.4rem; font-size: 0.7rem; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary); cursor: pointer; text-align: left;">
+              ○ Not Applied
+            </button>
+            <button class="app-status-btn" data-app="READY_TO_APPLY" style="padding: 0.35rem 0.4rem; font-size: 0.7rem; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary); cursor: pointer; text-align: left;">
+              ⚡ Ready to Apply
+            </button>
+            <button class="app-status-btn" data-app="APPLIED" style="padding: 0.35rem 0.4rem; font-size: 0.7rem; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary); cursor: pointer; text-align: left;">
+              ✓ Applied
+            </button>
+            <button class="app-status-btn" data-app="RECRUITER_CONTACT" style="padding: 0.35rem 0.4rem; font-size: 0.7rem; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary); cursor: pointer; text-align: left;">
+              💬 Recruiter Contact
+            </button>
+            <button class="app-status-btn" data-app="INTERVIEW" style="padding: 0.35rem 0.4rem; font-size: 0.7rem; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary); cursor: pointer; text-align: left;">
+              ★ Interviewing
+            </button>
+            <button class="app-status-btn" data-app="OFFER" style="padding: 0.35rem 0.4rem; font-size: 0.7rem; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary); cursor: pointer; text-align: left;">
+              🏆 Offer Received
+            </button>
+            <button class="app-status-btn" data-app="REJECTED" style="padding: 0.35rem 0.4rem; font-size: 0.7rem; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary); cursor: pointer; text-align: left;">
+              ✕ Rejected
+            </button>
+            <button class="app-status-btn" data-app="WITHDRAWN" style="padding: 0.35rem 0.4rem; font-size: 0.7rem; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary); cursor: pointer; text-align: left;">
+              — Withdrawn
+            </button>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="decision-group" style="margin-top: 0.85rem;">
+          <label class="decision-label" for="humanNotes" style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem; display: block; font-size: 0.8125rem;">
+            Optional Notes:
+          </label>
+          <textarea id="humanNotes" class="decision-textarea" placeholder="Reasoning for verdict, capability alignment, or application log..." style="width: 100%; height: 60px; background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.45rem; color: var(--text-primary); font-family: var(--font-sans); font-size: 0.8125rem; resize: vertical; outline: none;"></textarea>
+        </div>
+
+        <!-- Actions -->
+        <div class="decision-actions" style="margin-top: 0.85rem; display: flex; flex-direction: column; gap: 0.45rem;">
+          <button class="action-btn primary large" id="saveNextBtn" style="justify-content: center; width: 100%; padding: 0.6rem 1rem; font-size: 0.875rem;">
+            <span>Save & Next</span>
+            <kbd style="margin-left: 0.5rem; font-size: 0.7rem; padding: 0.1rem 0.35rem; background: rgba(0,0,0,0.3); border-radius: 4px;">Enter</kbd>
+          </button>
+          
+          <div style="display: flex; gap: 0.5rem; width: 100%;">
+            <button class="action-btn secondary" id="prevBtn" style="flex: 1; justify-content: center;">
+              <span>← Prev</span>
+              <kbd style="margin-left: 0.3rem; font-size: 0.65rem;">K</kbd>
+            </button>
+            <button class="action-btn secondary" id="nextBtn" style="flex: 1; justify-content: center;">
+              <span>Next →</span>
+              <kbd style="margin-left: 0.3rem; font-size: 0.65rem;">J</kbd>
+            </button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Summary Modal -->
+  <div class="modal-backdrop" id="summaryModal" style="display: none;">
+    <div class="modal-container" style="max-width: 860px; max-height: 88vh; overflow-y: auto;">
+      <div class="modal-header">
+        <h2 class="modal-title">Discovery Quality & Strategy Breakdown</h2>
+        <button class="modal-close" id="closeSummaryModal">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 1.5rem;">
+        <!-- Top Stats Row -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem;">
+          <div style="background: var(--bg-subtle); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color); text-align: center;">
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Discovered</div>
+            <div id="modalTotalDiscovered" style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin-top: 0.25rem;">129</div>
+          </div>
+          <div style="background: var(--bg-subtle); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color); text-align: center;">
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Reviewed</div>
+            <div id="modalTotalReviewed" style="font-size: 1.5rem; font-weight: 700; color: var(--accent-blue); margin-top: 0.25rem;">0</div>
+          </div>
+          <div style="background: var(--bg-subtle); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color); text-align: center;">
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Relevant</div>
+            <div id="modalRelevant" style="font-size: 1.5rem; font-weight: 700; color: var(--accent-emerald); margin-top: 0.25rem;">0</div>
+          </div>
+          <div style="background: var(--bg-subtle); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color); text-align: center;">
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Adjacent</div>
+            <div id="modalAdjacent" style="font-size: 1.5rem; font-weight: 700; color: var(--accent-cyan); margin-top: 0.25rem;">0</div>
+          </div>
+          <div style="background: var(--bg-subtle); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color); text-align: center;">
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Weak / Irrelevant</div>
+            <div id="modalWeakIrrelevant" style="font-size: 1.5rem; font-weight: 700; color: var(--accent-rose); margin-top: 0.25rem;">0</div>
+          </div>
+        </div>
+
+        <!-- Breakdown Tables -->
+        <div style="margin-bottom: 1.5rem;">
+          <h3 style="font-size: 0.875rem; font-weight: 600; color: var(--accent-blue); text-transform: uppercase; margin-bottom: 0.5rem;">
+            Breakdown by Opportunity Type
+          </h3>
+          <div style="overflow-x: auto; background: var(--bg-subtle); border-radius: 6px; border: 1px solid var(--border-color);">
+            <table id="typeBreakdownTable" style="width: 100%; border-collapse: collapse; font-size: 0.8125rem; text-align: left;">
+              <thead>
+                <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted);">
+                  <th style="padding: 0.6rem 0.75rem;">Type</th>
+                  <th style="padding: 0.6rem 0.75rem;">Discovered</th>
+                  <th style="padding: 0.6rem 0.75rem;">Reviewed</th>
+                  <th style="padding: 0.6rem 0.75rem;">Relevant</th>
+                  <th style="padding: 0.6rem 0.75rem;">Adjacent</th>
+                  <th style="padding: 0.6rem 0.75rem;">Weak / Irrel</th>
+                  <th style="padding: 0.6rem 0.75rem;">Discovery Yield (No/Unsure)</th>
+                </tr>
+              </thead>
+              <tbody id="typeBreakdownBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+          <h3 style="font-size: 0.875rem; font-weight: 600; color: var(--accent-blue); text-transform: uppercase; margin-bottom: 0.5rem;">
+            Breakdown by Search Intent Query
+          </h3>
+          <div style="overflow-x: auto; background: var(--bg-subtle); border-radius: 6px; border: 1px solid var(--border-color);">
+            <table id="intentBreakdownTable" style="width: 100%; border-collapse: collapse; font-size: 0.8125rem; text-align: left;">
+              <thead>
+                <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted);">
+                  <th style="padding: 0.6rem 0.75rem;">Search Intent</th>
+                  <th style="padding: 0.6rem 0.75rem;">Discovered</th>
+                  <th style="padding: 0.6rem 0.75rem;">Reviewed</th>
+                  <th style="padding: 0.6rem 0.75rem;">Relevant</th>
+                  <th style="padding: 0.6rem 0.75rem;">Adjacent</th>
+                  <th style="padding: 0.6rem 0.75rem;">Weak / Irrel</th>
+                </tr>
+              </thead>
+              <tbody id="intentBreakdownBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <h3 style="font-size: 0.875rem; font-weight: 600; color: var(--accent-blue); text-transform: uppercase; margin-bottom: 0.5rem;">
+            Breakdown by Source
+          </h3>
+          <div style="overflow-x: auto; background: var(--bg-subtle); border-radius: 6px; border: 1px solid var(--border-color);">
+            <table id="sourceBreakdownTable" style="width: 100%; border-collapse: collapse; font-size: 0.8125rem; text-align: left;">
+              <thead>
+                <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted);">
+                  <th style="padding: 0.6rem 0.75rem;">Source</th>
+                  <th style="padding: 0.6rem 0.75rem;">Discovered</th>
+                  <th style="padding: 0.6rem 0.75rem;">Reviewed</th>
+                  <th style="padding: 0.6rem 0.75rem;">Relevant</th>
+                  <th style="padding: 0.6rem 0.75rem;">Adjacent</th>
+                  <th style="padding: 0.6rem 0.75rem;">Weak / Irrel</th>
+                </tr>
+              </thead>
+              <tbody id="sourceBreakdownBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="discovery.js"></script>
+</body>
+</html>

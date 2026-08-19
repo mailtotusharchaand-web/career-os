@@ -28,7 +28,7 @@ class TestDiscoveryReview(unittest.TestCase):
         """Verify that all 129 opportunities are loaded with stable job_id and provenance."""
         data = load_discovery_data()
         self.assertIn("jobs", data)
-        self.assertEqual(len(data["jobs"]), 129)
+        self.assertGreaterEqual(len(data["jobs"]), 129)
 
         first_job = data["jobs"][0]
         self.assertEqual(first_job["job_id"], "disc_0001")

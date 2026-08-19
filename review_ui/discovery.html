@@ -164,21 +164,21 @@
         <!-- 1. Job Identity Header Card -->
         <div class="card job-card" id="jobCard" style="padding: 1.25rem;">
           <div class="job-header" style="border-bottom: none; padding-bottom: 0;">
-            <div class="job-meta-top" style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.5rem;">
+            <div class="job-meta-top" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.65rem;">
               <span class="job-queue-tag" id="jobTypeTag">DIRECT</span>
               <span class="job-id-tag" id="jobIdTag" style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent-blue); font-weight: 600;">disc_0001</span>
               <span class="job-geo-tag" id="jobSourceTag">INDEED</span>
               <span class="job-geo-tag" style="background: rgba(16, 185, 129, 0.1); color: var(--accent-emerald); border-color: rgba(16, 185, 129, 0.2);">INDIA</span>
               <span class="job-location" id="jobLocation" style="font-size: 0.75rem; color: var(--text-secondary); background: var(--bg-subtle); padding: 0.15rem 0.45rem; border-radius: 4px; border: 1px solid var(--border-color);">Bengaluru, Karnataka, India</span>
-              <span class="job-salary" id="jobSalary" style="font-size: 0.75rem; color: var(--accent-emerald); font-family: var(--font-mono); background: var(--bg-subtle); padding: 0.15rem 0.45rem; border-radius: 4px; border: 1px solid var(--border-color);">Salary Not Listed</span>
+              <span class="job-salary" id="jobSalary" style="font-size: 0.75rem; color: var(--accent-emerald); font-family: var(--font-mono); background: var(--bg-subtle); padding: 0.15rem 0.45rem; border-radius: 4px; border: 1px solid var(--border-color); margin-left: auto;">Salary Not Listed</span>
             </div>
 
-            <h1 class="job-title" id="jobTitle" style="font-size: 1.35rem; font-weight: 700; color: var(--text-primary); line-height: 1.3;">Loading discovery opportunities...</h1>
-            <div class="job-company-row" style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.35rem;">
-              <h2 class="job-company" id="jobCompany" style="font-size: 1rem; font-weight: 600; color: var(--accent-blue);">—</h2>
-              <a href="#" target="_blank" rel="noopener noreferrer" class="view-job-link" id="viewJobLink" style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; font-weight: 600; color: var(--accent-blue); text-decoration: none; background: rgba(56, 189, 248, 0.1); padding: 0.3rem 0.65rem; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.25);">
-                View on Source
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
+            <h1 class="job-title" id="jobTitle" style="font-size: 1.35rem; font-weight: 700; color: var(--text-primary); line-height: 1.3; margin-bottom: 0.35rem;">Loading discovery opportunities...</h1>
+            <div class="job-company-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.25rem;">
+              <h2 class="job-company" id="jobCompany" style="font-size: 1.05rem; font-weight: 600; color: var(--accent-blue); margin: 0; min-width: 0; word-break: break-word; flex: 1 1 240px;">—</h2>
+              <a href="#" target="_blank" rel="noopener noreferrer" class="view-job-link" id="viewJobLink" title="Open original job posting" aria-label="Open original job posting" style="display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.78rem; font-weight: 600; color: var(--accent-blue); text-decoration: none; background: rgba(56, 189, 248, 0.1); padding: 0.25rem 0.55rem; border-radius: 5px; border: 1px solid rgba(56, 189, 248, 0.25); white-space: nowrap; flex-shrink: 0; margin-left: auto;">
+                <span>View</span>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
               </a>
             </div>
           </div>
@@ -450,8 +450,8 @@
   </main>
 
   <!-- Summary Modal -->
-  <div class="modal-backdrop" id="summaryModal" style="display: none;">
-    <div class="modal-container" style="max-width: 860px; max-height: 88vh; overflow-y: auto;">
+  <div class="modal-overlay" id="summaryModal" style="display: none;">
+    <div class="modal-card" style="max-width: 860px; max-height: 88vh; overflow-y: auto;">
       <div class="modal-header">
         <h2 class="modal-title">Discovery Quality & Strategy Breakdown</h2>
         <button class="modal-close" id="closeSummaryModal">&times;</button>

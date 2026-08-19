@@ -10,19 +10,43 @@
       },
       "enabled": true
     },
-    "naukri": {
-      "adapter": "jobspy",
-      "geographic_coverage": ["IN"],
-      "supports_location_param": true,
-      "supports_country_param": false,
-      "enabled": true
-    },
     "linkedin": {
       "adapter": "jobspy",
       "geographic_coverage": ["global", "IN"],
       "supports_location_param": true,
       "supports_country_param": false,
       "enabled": true
+    },
+    "jobspipe": {
+      "adapter": "jobspipe",
+      "geographic_coverage": ["global", "IN"],
+      "supports_location_param": true,
+      "supports_country_param": true,
+      "country_code_map": {
+        "IN": "IN"
+      },
+      "enabled": true
+    },
+    "naukri": {
+      "adapter": "jobspy",
+      "geographic_coverage": ["IN"],
+      "supports_location_param": true,
+      "supports_country_param": false,
+      "enabled": false
+    },
+    "greenhouse": {
+      "adapter": "greenhouse",
+      "geographic_coverage": ["global", "IN"],
+      "supports_location_param": true,
+      "supports_country_param": false,
+      "enabled": false
+    },
+    "lever": {
+      "adapter": "lever",
+      "geographic_coverage": ["global", "IN"],
+      "supports_location_param": true,
+      "supports_country_param": false,
+      "enabled": false
     }
   }
 }

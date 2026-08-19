@@ -969,17 +969,20 @@ textarea#humanNotes:focus {
 .queue-item-status.unreviewed { color: var(--text-muted); font-size: 0.7rem; }
 
 /* Modals */
-.modal-overlay {
+.modal-overlay,
+.modal-backdrop {
   position: fixed;
   inset: 0;
   background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 1000;
 }
 
-.modal-card {
+.modal-card,
+.modal-container {
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 8px;

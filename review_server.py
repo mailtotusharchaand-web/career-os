@@ -41,6 +41,14 @@ HUMAN_DECISIONS_FILE = BASE_DIR / "human_review.json"
 DISCOVERY_RESULTS_FILE = BASE_DIR / "india_discovery_results.json"
 DISCOVERY_HUMAN_FILE = BASE_DIR / "discovery_human_review.json"
 DISCOVERY_EVALUATIONS_FILE = BASE_DIR / "india_discovery_llm_evaluations.json"
+SQLITE_DB_FILE = BASE_DIR / "career_os.db"
+
+# Import SQLite Repository
+try:
+    from career_os.db.repository import CareerOSRepository
+    db_repo = CareerOSRepository(db_path=str(SQLITE_DB_FILE))
+except ImportError:
+    db_repo = None
 
 
 def normalize_geography(loc_str: str) -> str:
@@ -260,7 +268,13 @@ def load_discovery_evaluations() -> dict:
 
 
 def load_discovery_data() -> dict:
-    """Loads all normalized opportunities from india_discovery_results.json with stable IDs and attached LLM evaluations."""
+    """Loads all opportunities with stable IDs and attached LLM evaluations from SQLite (or fallback JSON)."""
+    if SQLITE_DB_FILE.exists() and db_repo is not None:
+        try:
+            return db_repo.get_workstation_data()
+        except Exception as e:
+            print(f"Warning loading workstation data from SQLite: {e}")
+
     if not DISCOVERY_RESULTS_FILE.exists():
         return {"jobs": [], "total_unique_deduped": 0, "generated_at": None}
 
@@ -291,7 +305,14 @@ def load_discovery_data() -> dict:
 
 
 def load_discovery_decisions(file_path: Path = DISCOVERY_HUMAN_FILE) -> dict:
-    """Loads human decisions from discovery_human_review.json."""
+    """Loads human decisions from SQLite (or fallback JSON when file_path is custom)."""
+    if file_path == DISCOVERY_HUMAN_FILE and SQLITE_DB_FILE.exists() and db_repo is not None:
+        try:
+            decisions = db_repo.list_all_human_reviews()
+            return {"updated_at": datetime.now(timezone.utc).isoformat(), "decisions": decisions}
+        except Exception as e:
+            print(f"Warning loading reviews from SQLite: {e}")
+
     if file_path.exists():
         try:
             with open(file_path, "r", encoding="utf-8") as f:
@@ -502,10 +523,8 @@ class ReviewRequestHandler(SimpleHTTPRequestHandler):
                     self.send_json_response({"error": "job_id is required"}, 400)
                     return
 
-                decisions_data = load_discovery_decisions()
-                decisions = decisions_data.setdefault("decisions", {})
-
-                decisions[job_id] = {
+                review_payload = {
+                    "opportunity_id": job_id,
                     "job_id": job_id,
                     "verdict": verdict,
                     "counterfactual": counterfactual,
@@ -519,13 +538,26 @@ class ReviewRequestHandler(SimpleHTTPRequestHandler):
                     "reviewed_at": datetime.now(timezone.utc).isoformat()
                 }
 
-                save_discovery_decisions(decisions_data)
-                self.send_json_response({
-                    "status": "success",
-                    "job_id": job_id,
-                    "decision": decisions[job_id],
-                    "total_reviewed": len(decisions)
-                })
+                if SQLITE_DB_FILE.exists() and db_repo is not None:
+                    saved_decision = db_repo.save_human_review(review_payload)
+                    all_reviews = db_repo.list_all_human_reviews()
+                    self.send_json_response({
+                        "status": "success",
+                        "job_id": job_id,
+                        "decision": saved_decision,
+                        "total_reviewed": len(all_reviews)
+                    })
+                else:
+                    decisions_data = load_discovery_decisions()
+                    decisions = decisions_data.setdefault("decisions", {})
+                    decisions[job_id] = review_payload
+                    save_discovery_decisions(decisions_data)
+                    self.send_json_response({
+                        "status": "success",
+                        "job_id": job_id,
+                        "decision": decisions[job_id],
+                        "total_reviewed": len(decisions)
+                    })
             except Exception as e:
                 self.send_json_response({"error": str(e)}, 500)
         else:

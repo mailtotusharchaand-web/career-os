@@ -36,6 +36,8 @@ def route_intent(intent: Dict[str, Any], registry: Dict[str, Any], results_wante
         if country_code not in coverage and "global" not in coverage:
             continue
 
+        adapter_type = source_meta.get("adapter", "jobspy")
+
         params: Dict[str, Any] = {
             "search_term": search_query,
             "results_wanted": results_wanted,
@@ -55,6 +57,7 @@ def route_intent(intent: Dict[str, Any], registry: Dict[str, Any], results_wante
 
         execution_plan.append({
             "source": source_name,
+            "adapter": adapter_type,
             "intent": intent,
             "params": params,
         })

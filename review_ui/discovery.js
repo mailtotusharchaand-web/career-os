@@ -295,9 +295,9 @@ function renderNavigator() {
     let llmBadgeHtml = "";
     if (job.gate_failed) {
       llmBadgeHtml = `<span style="font-size: 0.65rem; font-family: var(--font-mono); font-weight: 700; padding: 0.1rem 0.35rem; border-radius: 3px; background: rgba(244, 63, 94, 0.15); color: var(--accent-rose); border: 1px solid rgba(244, 63, 94, 0.3);">GATE REJ [0]</span>`;
-    } else if (job.llm_evaluation) {
+    } else if (job.llm_evaluation && (job.llm_evaluation.score !== null && job.llm_evaluation.score !== undefined || job.llm_evaluation.overall_score !== null && job.llm_evaluation.overall_score !== undefined)) {
       const rec = job.llm_evaluation.recommendation || "Skip";
-      const score = job.llm_evaluation.overall_score || 0;
+      const score = (job.llm_evaluation.score !== null && job.llm_evaluation.score !== undefined) ? job.llm_evaluation.score : job.llm_evaluation.overall_score;
       let badgeStyle = "background: rgba(148, 163, 184, 0.15); color: var(--text-secondary); border: 1px solid rgba(148, 163, 184, 0.3);";
       if (rec === "Strong Apply" || rec === "Apply") {
         badgeStyle = "background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald); font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.4);";
@@ -307,6 +307,8 @@ function renderNavigator() {
         badgeStyle = "background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); font-weight: 600; border: 1px solid rgba(245, 158, 11, 0.4);";
       }
       llmBadgeHtml = `<span style="font-size: 0.65rem; font-family: var(--font-mono); padding: 0.1rem 0.35rem; border-radius: 3px; ${badgeStyle}">${rec.toUpperCase()} [${score}]</span>`;
+    } else {
+      llmBadgeHtml = `<span style="font-size: 0.65rem; font-family: var(--font-mono); padding: 0.1rem 0.35rem; border-radius: 3px; background: rgba(245, 158, 11, 0.1); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.25);">PENDING</span>`;
     }
 
     item.innerHTML = `
@@ -354,17 +356,8 @@ function highlightActiveNavigatorItem() {
 }
 
 function renderCurrentJob() {
-  if (currentFilteredJobs.length === 0) {
-    jobTitle.textContent = "No opportunities in current filter view";
-    jobCompany.textContent = "Adjust filter criteria in the toolbar above.";
-    jobLocation.textContent = "—";
-    jobSalary.textContent = "—";
-    provQuery.textContent = "—";
-    provHypothesis.textContent = "—";
-    provSourceTime.textContent = "—";
-    jobDescription.textContent = "No job selected.";
-    decisionStatus.textContent = "N/A";
-    resetDecisionForm();
+  if (currentFilteredJobs.length === 0 || currentJobIndex < 0 || currentJobIndex >= currentFilteredJobs.length) {
+    clearDetailView();
     return;
   }
 
@@ -373,20 +366,12 @@ function renderCurrentJob() {
   const prov = job.provenance || {};
 
   jobIdTag.textContent = job.job_id;
-  jobTypeTag.textContent = otype;
+  jobTypeTag.textContent = (job.job_type || "Full-time").toUpperCase();
   jobSourceTag.textContent = (job.source || "UNKNOWN").toUpperCase();
   jobLocation.textContent = job.location || "India";
-  
-  if (job.salary_min || job.salary_max) {
-    const min = job.salary_min ? `₹${Number(job.salary_min).toLocaleString()}` : "";
-    const max = job.salary_max ? `₹${Number(job.salary_max).toLocaleString()}` : "";
-    jobSalary.textContent = `${min} - ${max} ${job.salary_interval || ""}`.trim();
-  } else {
-    jobSalary.textContent = "Salary Not Listed";
-  }
-
-  jobTitle.textContent = job.title;
-  jobCompany.textContent = job.company;
+  jobSalary.textContent = formatSalary(job);
+  jobTitle.textContent = job.title || "Untitled Role";
+  jobCompany.textContent = job.company || "Unknown Company";
 
   if (job.job_url) {
     viewJobLink.href = job.job_url;
@@ -403,28 +388,17 @@ function renderCurrentJob() {
   const timeStr = prov.retrieved_at ? new Date(prov.retrieved_at).toLocaleString() : "Recent Run";
   provSourceTime.textContent = `${(job.source || "").toUpperCase()} • Discovered ${timeStr}`;
 
-  // LLM Evaluation Context Display
-  if (job.gate_failed) {
-    llmRecBadge.textContent = "GATE REJECTED";
-    llmRecBadge.style.background = "rgba(244, 63, 94, 0.2)";
-    llmRecBadge.style.color = "var(--accent-rose)";
-    llmRecBadge.style.borderColor = "var(--accent-rose)";
-    llmScorePill.textContent = "SCORE: 0/100";
-    llmRoleFit.textContent = "0/100";
-    llmExpFit.textContent = "0/100";
-    llmTransFit.textContent = "0/100";
-    llmSenFit.textContent = "0/100";
-    llmProbObtain.textContent = "0%";
-    llmDiffUpside.textContent = "Rejected by Gate";
-    llmStrengthsList.innerHTML = `<li>No candidate fit assessment performed</li>`;
-    llmGapsList.innerHTML = (job.gate_failure_reasons || []).map(r => `<li>${escapeHtml(r)}</li>`).join("") || `<li>Explicit constraint gate failed</li>`;
-    llmReasoning.textContent = "This opportunity was excluded by explicit employment-type/recency constraint gates before LLM evaluation.";
-  } else if (job.llm_evaluation) {
+  // Description
+  jobDescription.textContent = job.description || "No full job description provided by source.";
+
+  // LLM Evaluation Section
+  if (job.llm_evaluation && (job.evaluation_status === "EVALUATED" || job.evaluation_status === "REUSED" || !job.evaluation_status)) {
     const ev = job.llm_evaluation;
     const rec = ev.recommendation || "Skip";
-    const score = ev.overall_score !== undefined ? ev.overall_score : 0;
+    const scoreVal = (ev.score !== null && ev.score !== undefined) ? ev.score : ev.overall_score;
+    const isReused = ev.is_reused || job.evaluation_status === "REUSED";
 
-    llmRecBadge.textContent = rec.toUpperCase();
+    llmRecBadge.textContent = isReused ? `${rec.toUpperCase()} (REUSED)` : rec.toUpperCase();
     if (rec === "Strong Apply" || rec === "Apply") {
       llmRecBadge.style.background = "rgba(16, 185, 129, 0.2)";
       llmRecBadge.style.color = "var(--accent-emerald)";
@@ -443,30 +417,35 @@ function renderCurrentJob() {
       llmRecBadge.style.borderColor = "var(--border-color)";
     }
 
-    llmScorePill.textContent = `SCORE: ${score}/100`;
-    llmRoleFit.textContent = `${ev.role_fit || 0}/100`;
-    llmExpFit.textContent = `${ev.current_experience_fit || 0}/100`;
-    llmTransFit.textContent = `${ev.transferable_capability_fit || 0}/100`;
-    llmSenFit.textContent = `${ev.seniority_fit || 0}/100`;
-    llmProbObtain.textContent = `${ev.probability_of_obtaining || 0}%`;
-    llmDiffUpside.textContent = `${ev.transition_difficulty || "medium"} / ${ev.career_upside || "unknown"}`;
+    llmScorePill.textContent = (scoreVal !== null && scoreVal !== undefined) ? `SCORE: ${scoreVal}/100` : `SCORE: —`;
+    llmRoleFit.textContent = (ev.role_fit !== null && ev.role_fit !== undefined) ? `${ev.role_fit}/100` : `—`;
+    llmExpFit.textContent = (ev.current_experience_fit !== null && ev.current_experience_fit !== undefined) ? `${ev.current_experience_fit}/100` : `—`;
+    llmTransFit.textContent = (ev.transferable_capability_fit !== null && ev.transferable_capability_fit !== undefined) ? `${ev.transferable_capability_fit}/100` : `—`;
+    llmSenFit.textContent = (ev.seniority_fit !== null && ev.seniority_fit !== undefined) ? `${ev.seniority_fit}/100` : `—`;
+    llmProbObtain.textContent = (ev.probability_of_obtaining !== null && ev.probability_of_obtaining !== undefined) ? `${ev.probability_of_obtaining}%` : `—`;
+    
+    if (ev.transition_difficulty || ev.career_upside) {
+      llmDiffUpside.textContent = `${ev.transition_difficulty || "—"} / ${ev.career_upside || "—"}`;
+    } else {
+      llmDiffUpside.textContent = "—";
+    }
 
-    const strengths = ev.key_strengths || [];
+    const strengths = ev.key_strengths || ev.strengths || [];
     llmStrengthsList.innerHTML = strengths.length > 0 
       ? strengths.map(s => `<li>${escapeHtml(s)}</li>`).join("") 
       : `<li>No specific strengths highlighted</li>`;
 
-    const gaps = ev.missing_critical_skills || [];
+    const gaps = ev.missing_critical_skills || ev.gaps || [];
     llmGapsList.innerHTML = gaps.length > 0 
       ? gaps.map(g => `<li>${escapeHtml(g)}</li>`).join("") 
       : `<li>No critical capability gaps identified</li>`;
 
     llmReasoning.textContent = ev.reasoning && ev.reasoning !== "UNKNOWN" ? ev.reasoning : (ev.evidence || "No detailed reasoning text provided.");
   } else {
-    llmRecBadge.textContent = "NOT EVALUATED";
-    llmRecBadge.style.background = "var(--bg-hover)";
-    llmRecBadge.style.color = "var(--text-muted)";
-    llmRecBadge.style.borderColor = "var(--border-color)";
+    llmRecBadge.textContent = "PENDING EVALUATION";
+    llmRecBadge.style.background = "rgba(245, 158, 11, 0.15)";
+    llmRecBadge.style.color = "var(--accent-amber)";
+    llmRecBadge.style.borderColor = "rgba(245, 158, 11, 0.3)";
     llmScorePill.textContent = "SCORE: —";
     llmRoleFit.textContent = "—";
     llmExpFit.textContent = "—";
@@ -476,7 +455,7 @@ function renderCurrentJob() {
     llmDiffUpside.textContent = "—";
     llmStrengthsList.innerHTML = `<li>Pending LLM evaluation</li>`;
     llmGapsList.innerHTML = `<li>Pending LLM evaluation</li>`;
-    llmReasoning.textContent = "LLM evaluation for this opportunity has not been loaded.";
+    llmReasoning.textContent = "LLM evaluation for this opportunity is pending.";
   }
 
   // Description
@@ -815,6 +794,13 @@ function setupEventListeners() {
       return;
     }
 
+    // Escape to close modals
+    if (e.key === "Escape") {
+      if (summaryModal.style.display !== "none") {
+        summaryModal.style.display = "none";
+      }
+    }
+
     // Verdicts: 1, 2, 3, 4
     if (e.key === "1") { e.preventDefault(); selectVerdict("RELEVANT"); }
     if (e.key === "2") { e.preventDefault(); selectVerdict("ADJACENT"); }
@@ -914,6 +900,59 @@ async function openSummary() {
   } catch (err) {
     alert(`Error loading summary: ${err.message}`);
   }
+}
+
+function formatSalary(job) {
+  if (!job) return "Salary Not Listed";
+
+  if (job.salary_min != null || job.salary_max != null) {
+    try {
+      const min = job.salary_min != null ? `₹${Number(job.salary_min).toLocaleString('en-IN')}` : "";
+      const max = job.salary_max != null ? `₹${Number(job.salary_max).toLocaleString('en-IN')}` : "";
+      const interval = job.salary_interval ? ` ${job.salary_interval}` : "";
+      if (min && max) {
+        return `${min} - ${max}${interval}`;
+      } else if (min) {
+        return `From ${min}${interval}`;
+      } else if (max) {
+        return `Up to ${max}${interval}`;
+      }
+    } catch (e) {
+      // Fallback
+    }
+  }
+
+  if (job.salary_raw || job.salary) {
+    return String(job.salary_raw || job.salary).trim();
+  }
+
+  const desc = job.description || "";
+  if (desc) {
+    const cleaned = desc.replace(/\\\./g, ".").replace(/\\-/g, "-").replace(/\\_/g, "_").replace(/\\\*/g, "*");
+
+    // 1. CTC / Salary headers e.g. **CTC:** Up to 10 LPA or CTC: 12-18 LPA
+    const ctcMatch = cleaned.match(/(?:\*\*|\b)(?:CTC|Salary|Package|Pay|Compensation)(?:\*\*|\b)?\s*[:\-–]\s*([^\n\r*#_]+)/i);
+    if (ctcMatch && ctcMatch[1]) {
+      const val = ctcMatch[1].trim().replace(/^[*_`]+|[*_`]+$/g, "");
+      if (/(?:LPA|lpa|INR|₹|Rs\.?|lakh|crore|\d+\s*(?:a|per)\s*(?:year|annum|month|yr|mo)|\d{5,})/i.test(val)) {
+        return val;
+      }
+    }
+
+    // 2. Explicit Rupee amount patterns e.g. ₹10,00,000 - ₹20,00,000 a year
+    const rupeeMatch = cleaned.match(/(₹\s*[\d,]+(?:\.\d{2})?(?:\s*-\s*₹?\s*[\d,]+(?:\.\d{2})?)?(?:\s*(?:a|per)\s*(?:year|month|annum|yr|mo))?)/i);
+    if (rupeeMatch && rupeeMatch[1]) {
+      return rupeeMatch[1].trim();
+    }
+
+    // 3. LPA standalone pattern e.g. 10-15 LPA, Up to 10 LPA
+    const lpaMatch = cleaned.match(/((?:Up to\s+)?\d+(?:\.\d+)?(?:\s*-\s*\d+(?:\.\d+)?)?\s*LPA)/i);
+    if (lpaMatch && lpaMatch[1]) {
+      return lpaMatch[1].trim();
+    }
+  }
+
+  return "Salary Not Listed";
 }
 
 function escapeHtml(str) {

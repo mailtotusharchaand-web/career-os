@@ -2,6 +2,9 @@
 .env
 .env.*
 !.env.example
+.tokens/
+*.token
+*.tokens
 
 # Candidate Personal Documents / CV
 *.docx

@@ -6,6 +6,7 @@ Enforces strict security rules:
 - Zero plaintext credential storage in domain models
 - Integrates with TokenStore abstraction
 - Actionable configuration error messages when environment variables are absent.
+- Dynamic canonical redirect URI alignment with active server port.
 """
 
 import os
@@ -16,6 +17,7 @@ from typing import Dict, Any, Optional, Tuple
 import requests
 
 from .token_store import TokenStore, LocalSecureFileTokenStore
+from career_os.config import load_dotenv, get_canonical_redirect_uri
 
 
 READONLY_GMAIL_SCOPE = "https://www.googleapis.com/auth/gmail.readonly"
@@ -40,14 +42,23 @@ class GoogleOAuthClient:
         client_id: Optional[str] = None,
         client_secret: Optional[str] = None,
         redirect_uri: Optional[str] = None,
+        port: Optional[int] = None,
         token_store: Optional[TokenStore] = None,
     ):
-        self.client_id = client_id or os.getenv("GMAIL_CLIENT_ID", "")
-        self.client_secret = client_secret or os.getenv("GMAIL_CLIENT_SECRET", "")
-        self.redirect_uri = redirect_uri or os.getenv("GMAIL_REDIRECT_URI", "http://localhost:8080/api/gmail/callback")
+        load_dotenv()
+        self.client_id = client_id or os.getenv("GMAIL_CLIENT_ID", "").strip()
+        self.client_secret = client_secret or os.getenv("GMAIL_CLIENT_SECRET", "").strip()
+        self.port = port
+        self.redirect_uri = redirect_uri or get_canonical_redirect_uri(port=port)
         self.token_store = token_store or LocalSecureFileTokenStore()
 
-    def validate_configuration(self) -> None:
+    def get_redirect_uri(self, port: Optional[int] = None) -> str:
+        """Returns the active redirect URI, respecting custom port overrides if provided."""
+        if port is not None:
+            return get_canonical_redirect_uri(port=port)
+        return self.redirect_uri
+
+    def validate_configuration(self, port: Optional[int] = None) -> None:
         """Validates that necessary OAuth environment variables or arguments are present."""
         missing = []
         if not self.client_id:
@@ -55,23 +66,25 @@ class GoogleOAuthClient:
         if not self.client_secret:
             missing.append("GMAIL_CLIENT_SECRET")
         if missing:
+            active_uri = self.get_redirect_uri(port=port)
             raise OAuthConfigurationError(
                 f"Missing Google OAuth configuration: {', '.join(missing)}.\n"
                 f"Please add them to your .env file or configure GoogleOAuthClient directly.\n"
-                f"Redirect URI configured: {self.redirect_uri}"
+                f"Redirect URI configured: {active_uri}"
             )
 
-    def get_authorization_url(self, state: Optional[str] = None) -> Tuple[str, str]:
+    def get_authorization_url(self, state: Optional[str] = None, port: Optional[int] = None) -> Tuple[str, str]:
         """
         Generates Google OAuth2 authorization URL strictly requesting read-only Gmail access.
         Returns: (authorization_url, state_nonce)
         """
-        self.validate_configuration()
+        self.validate_configuration(port=port)
         state_nonce = state or secrets.token_urlsafe(16)
+        active_redirect_uri = self.get_redirect_uri(port=port)
 
         params = {
             "client_id": self.client_id,
-            "redirect_uri": self.redirect_uri,
+            "redirect_uri": active_redirect_uri,
             "response_type": "code",
             "scope": " ".join(ALL_REQUIRED_SCOPES),
             "access_type": "offline",
@@ -82,62 +95,83 @@ class GoogleOAuthClient:
         url = f"{GOOGLE_AUTH_URL}?{urllib.parse.urlencode(params)}"
         return url, state_nonce
 
-    def exchange_code_for_tokens(self, code: str) -> Dict[str, Any]:
+    def exchange_code_for_tokens(self, code: str, port: Optional[int] = None) -> Dict[str, Any]:
         """
         Exchanges authorization code for access and refresh tokens.
         """
         self.validate_configuration()
+        active_redirect_uri = self.get_redirect_uri(port=port)
 
         data = {
             "code": code,
             "client_id": self.client_id,
             "client_secret": self.client_secret,
-            "redirect_uri": self.redirect_uri,
+            "redirect_uri": active_redirect_uri,
             "grant_type": "authorization_code",
         }
 
         response = requests.post(GOOGLE_TOKEN_URL, data=data, timeout=10)
         if response.status_code != 200:
-            raise RuntimeError(f"Failed to exchange OAuth code for tokens: {response.status_code} - {response.text}")
+            error_details = response.text
+            try:
+                err_json = response.json()
+                error_details = err_json.get("error_description", err_json.get("error", error_details))
+            except Exception:
+                pass
+            raise ValueError(f"Failed to exchange OAuth code: {error_details}")
 
         token_data = response.json()
         access_token = token_data.get("access_token")
+        refresh_token = token_data.get("refresh_token")
+        expires_in = token_data.get("expires_in", 3600)
+
         if not access_token:
-            raise ValueError("Token response missing access_token.")
+            raise ValueError("Token response did not contain access_token.")
 
-        # Fetch user's email address
-        account_email = self.fetch_user_email(access_token)
+        # Identify account email via Google userinfo endpoint
+        userinfo_resp = requests.get(
+            GOOGLE_USERINFO_URL,
+            headers={"Authorization": f"Bearer {access_token}"},
+            timeout=10,
+        )
+        if userinfo_resp.status_code != 200:
+            raise ValueError("Failed to retrieve user profile email from Google userinfo endpoint.")
 
-        # Store securely in TokenStore
-        token_data["client_id"] = self.client_id
-        token_data["account_email"] = account_email
-        self.token_store.save_token(provider="gmail", account_id=account_email, token_data=token_data)
+        user_info = userinfo_resp.json()
+        account_email = user_info.get("email")
+        if not account_email:
+            raise ValueError("User profile did not return an email address.")
+
+        # Persist securely in TokenStore
+        save_payload = {
+            "access_token": access_token,
+            "expires_in": expires_in,
+        }
+        if refresh_token:
+            save_payload["refresh_token"] = refresh_token
+
+        self.token_store.save_token("gmail", account_email, save_payload)
 
         return {
             "account_email": account_email,
-            "token_data": token_data,
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "expires_in": expires_in,
         }
 
-    def fetch_user_email(self, access_token: str) -> str:
-        """Fetches the authenticated user's email address from Google UserInfo API."""
-        headers = {"Authorization": f"Bearer {access_token}"}
-        resp = requests.get(GOOGLE_USERINFO_URL, headers=headers, timeout=10)
-        if resp.status_code == 200:
-            data = resp.json()
-            return data.get("email", "unknown_user@gmail.com")
-        return "unknown_user@gmail.com"
-
     def refresh_token(self, account_email: str) -> Optional[Dict[str, Any]]:
-        """Refreshes access token for a stored account if refresh token exists."""
-        self.validate_configuration()
-        existing_token = self.token_store.get_token("gmail", account_email)
-        if not existing_token or not existing_token.get("refresh_token"):
+        """
+        Refreshes an expired access token using the stored refresh token.
+        """
+        token_info = self.token_store.get_token("gmail", account_email)
+        if not token_info or not token_info.get("refresh_token"):
             return None
 
+        refresh_token_val = token_info["refresh_token"]
         data = {
             "client_id": self.client_id,
             "client_secret": self.client_secret,
-            "refresh_token": existing_token["refresh_token"],
+            "refresh_token": refresh_token_val,
             "grant_type": "refresh_token",
         }
 
@@ -145,12 +179,14 @@ class GoogleOAuthClient:
         if response.status_code != 200:
             return None
 
-        new_tokens = response.json()
-        # Keep original refresh token if not returned
-        if "refresh_token" not in new_tokens:
-            new_tokens["refresh_token"] = existing_token["refresh_token"]
-        new_tokens["client_id"] = self.client_id
-        new_tokens["account_email"] = account_email
+        token_data = response.json()
+        new_access_token = token_data.get("access_token")
+        if not new_access_token:
+            return None
 
-        self.token_store.save_token("gmail", account_email, new_tokens)
-        return new_tokens
+        token_info["access_token"] = new_access_token
+        if "expires_in" in token_data:
+            token_info["expires_in"] = token_data["expires_in"]
+
+        self.token_store.save_token("gmail", account_email, token_info)
+        return token_info

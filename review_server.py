@@ -28,8 +28,14 @@ from pathlib import Path
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from datetime import datetime, timezone
 import urllib.parse
+from typing import Optional, Dict, Any, List
 
-PORT = 8080
+from career_os.config import load_dotenv, get_server_port, get_canonical_redirect_uri
+
+# Ensure .env is loaded
+load_dotenv()
+
+PORT = get_server_port(8080)
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "review_ui"
 REVIEW_FILE = BASE_DIR / "llm_evaluation_review.json"
@@ -722,6 +728,8 @@ class ReviewRequestHandler(SimpleHTTPRequestHandler):
             pending_events = db_repo.list_career_events(status="PENDING_CONFIRMATION")
             pending_events_count = len(pending_events)
 
+        active_port = getattr(self.server, 'server_port', PORT) if hasattr(self, 'server') else PORT
+        canonical_redirect_uri = get_canonical_redirect_uri(port=active_port)
         oauth_configured = bool(oauth_client and oauth_client.client_id and oauth_client.client_secret)
 
         self.send_json_response({
@@ -729,24 +737,34 @@ class ReviewRequestHandler(SimpleHTTPRequestHandler):
             "account_email": active_account,
             "provider": "gmail" if is_connected else "mock",
             "oauth_configured": oauth_configured,
+            "redirect_uri": canonical_redirect_uri,
+            "server_port": active_port,
             "checkpoint": checkpoint,
             "pending_events_count": pending_events_count,
         })
 
     def send_gmail_auth_url(self):
-        """Generates OAuth authorization URL or returns configuration error."""
+        """Generates OAuth authorization URL or returns configuration error without exposing secrets."""
         if not oauth_client:
             self.send_json_response({"error": "OAuth client not initialized."}, 500)
             return
 
+        active_port = getattr(self.server, 'server_port', PORT) if hasattr(self, 'server') else PORT
+        canonical_redirect_uri = get_canonical_redirect_uri(port=active_port)
+
         try:
-            url, state = oauth_client.get_authorization_url()
-            self.send_json_response({"auth_url": url, "state": state})
+            url, state = oauth_client.get_authorization_url(port=active_port)
+            self.send_json_response({
+                "auth_url": url,
+                "state": state,
+                "redirect_uri": canonical_redirect_uri,
+            })
         except OAuthConfigurationError as e:
             self.send_json_response({
                 "error": str(e),
                 "is_config_error": True,
-                "hint": "Set GMAIL_CLIENT_ID and GMAIL_CLIENT_SECRET in .env"
+                "redirect_uri": canonical_redirect_uri,
+                "hint": f"Set GMAIL_CLIENT_ID and GMAIL_CLIENT_SECRET in .env. Ensure '{canonical_redirect_uri}' is added to Authorized redirect URIs in Google Cloud Console."
             }, 400)
         except Exception as e:
             self.send_json_response({"error": str(e)}, 500)
@@ -769,8 +787,9 @@ class ReviewRequestHandler(SimpleHTTPRequestHandler):
             self.end_headers()
             return
 
+        active_port = getattr(self.server, 'server_port', PORT) if hasattr(self, 'server') else PORT
         try:
-            res = oauth_client.exchange_code_for_tokens(code)
+            res = oauth_client.exchange_code_for_tokens(code, port=active_port)
             account_email = res.get("account_email", "")
             self.send_response(302)
             self.send_header("Location", f"/discovery?gmail_status=connected&email={urllib.parse.quote(account_email)}")
@@ -901,18 +920,27 @@ class ReviewRequestHandler(SimpleHTTPRequestHandler):
             self.send_json_response({"error": str(e)}, 500)
 
 
-def run_server():
-    server_address = ("127.0.0.1", PORT)
+def run_server(port: Optional[int] = None):
+    requested_port = port or PORT
+    server_address = ("127.0.0.1", requested_port)
     try:
         httpd = HTTPServer(server_address, ReviewRequestHandler)
     except OSError:
-        server_address = ("127.0.0.1", 8081)
+        fallback_port = 8081 if requested_port == 8080 else requested_port + 1
+        server_address = ("127.0.0.1", fallback_port)
         httpd = HTTPServer(server_address, ReviewRequestHandler)
 
+    actual_port = server_address[1]
+    canonical_redirect_uri = get_canonical_redirect_uri(port=actual_port)
+
     print(f"============================================================")
-    print(f"Career OS Review Server running at http://{server_address[0]}:{server_address[1]}")
-    print(f"  • Discovery Review UI : http://localhost:{server_address[1]}/discovery")
-    print(f"  • Evaluation Review UI: http://localhost:{server_address[1]}/")
+    print(f"Career OS Review Server running at http://{server_address[0]}:{actual_port}")
+    print(f"  • Discovery Review UI   : http://localhost:{actual_port}/discovery")
+    print(f"  • Evaluation Review UI  : http://localhost:{actual_port}/")
+    print(f"  • Google OAuth Redirect : {canonical_redirect_uri}")
+    if actual_port != requested_port:
+        print(f"  [!] Note: Port {requested_port} was in use; bound to fallback port {actual_port}.")
+        print(f"      Ensure Google Cloud Console includes: {canonical_redirect_uri}")
     print(f"============================================================")
     try:
         httpd.serve_forever()

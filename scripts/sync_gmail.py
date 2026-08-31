@@ -23,6 +23,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR))
 
+from career_os.config import load_dotenv, get_canonical_redirect_uri
 from career_os.db.repository import CareerOSRepository
 from career_os.email import (
     TokenStore,
@@ -35,6 +36,8 @@ from career_os.email import (
     OpportunityMatcher,
     format_dry_run_report,
 )
+
+load_dotenv()
 
 
 def main():

@@ -13,9 +13,15 @@ from review_server import ReviewRequestHandler
 from career_os.db.repository import CareerOSRepository
 
 
+class MockServer:
+    def __init__(self, port=8080):
+        self.server_port = port
+
+
 class MockHTTPHandler(ReviewRequestHandler):
     """Subclass of ReviewRequestHandler for headless unit testing without a socket."""
-    def __init__(self, request_bytes, method="GET", path="/"):
+    def __init__(self, request_bytes, method="GET", path="/", port=8080):
+        self.server = MockServer(port=port)
         self.rfile = io.BytesIO(request_bytes)
         self.wfile = io.BytesIO()
         self.command = method
@@ -59,18 +65,35 @@ class TestReviewServerGmail(unittest.TestCase):
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     @patch("review_server.db_repo")
-    def test_gmail_status_endpoint(self, mock_repo):
+    def test_gmail_status_endpoint_reports_dynamic_redirect_uri(self, mock_repo):
         mock_repo.get_or_create_email_sync_checkpoint.return_value = None
         mock_repo.list_career_events.return_value = []
 
-        handler = MockHTTPHandler(b"", method="GET", path="/api/gmail/status")
-        handler.do_GET()
+        # Test on port 8080
+        handler_8080 = MockHTTPHandler(b"", method="GET", path="/api/gmail/status", port=8080)
+        handler_8080.do_GET()
+        data_8080 = json.loads(handler_8080.wfile.getvalue().decode("utf-8"))
+        self.assertEqual(data_8080["server_port"], 8080)
+        self.assertEqual(data_8080["redirect_uri"], "http://localhost:8080/api/gmail/callback")
 
-        response_body = handler.wfile.getvalue().decode("utf-8")
-        data = json.loads(response_body)
-        self.assertIn("connected", data)
-        self.assertIn("provider", data)
-        self.assertIn("pending_events_count", data)
+        # Test on port 8081
+        handler_8081 = MockHTTPHandler(b"", method="GET", path="/api/gmail/status", port=8081)
+        handler_8081.do_GET()
+        data_8081 = json.loads(handler_8081.wfile.getvalue().decode("utf-8"))
+        self.assertEqual(data_8081["server_port"], 8081)
+        self.assertEqual(data_8081["redirect_uri"], "http://localhost:8081/api/gmail/callback")
+
+    def test_auth_url_endpoint_configuration_error_without_exposing_secrets(self):
+        handler = MockHTTPHandler(b"", method="GET", path="/api/gmail/auth-url", port=8081)
+        handler.do_GET()
+        data = json.loads(handler.wfile.getvalue().decode("utf-8"))
+
+        self.assertTrue(data.get("is_config_error"))
+        self.assertIn("GMAIL_CLIENT_ID", data.get("error", ""))
+        self.assertEqual(data.get("redirect_uri"), "http://localhost:8081/api/gmail/callback")
+        # Ensure secrets are never exposed
+        self.assertNotIn("client_secret", data)
+        self.assertNotIn("secret", str(data).lower().replace("gmail_client_secret", ""))
 
     @patch("review_server.db_repo")
     def test_gmail_sync_dry_run_endpoint(self, mock_repo):

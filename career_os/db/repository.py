@@ -757,3 +757,383 @@ class CareerOSRepository:
                 "by_search_intent": by_intent,
                 "by_source": by_source,
             }
+
+    # ---------------------------------------------------------
+    # Email Sync Checkpoints & Ingestion Tracking
+    # ---------------------------------------------------------
+    def get_or_create_email_sync_checkpoint(self, provider: str, account_id: str) -> Dict[str, Any]:
+        now = datetime.now(timezone.utc).isoformat()
+        with self.connection() as conn:
+            cur = conn.execute(
+                "SELECT * FROM email_sync_checkpoints WHERE provider = ? AND account_id = ?;",
+                (provider, account_id),
+            )
+            row = cur.fetchone()
+            if row:
+                return dict(row)
+
+            conn.execute(
+                """
+                INSERT INTO email_sync_checkpoints (
+                    provider, account_id, last_synced_at, last_history_id,
+                    last_message_timestamp, sync_status, messages_processed, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+                """,
+                (provider, account_id, now, None, None, "HEALTHY", 0, now, now),
+            )
+            cur = conn.execute(
+                "SELECT * FROM email_sync_checkpoints WHERE provider = ? AND account_id = ?;",
+                (provider, account_id),
+            )
+            return dict(cur.fetchone())
+
+    def update_email_sync_checkpoint(
+        self,
+        provider: str,
+        account_id: str,
+        last_synced_at: Optional[str] = None,
+        last_history_id: Optional[str] = None,
+        last_message_timestamp: Optional[str] = None,
+        sync_status: Optional[str] = None,
+        messages_increment: int = 0,
+    ) -> None:
+        now = datetime.now(timezone.utc).isoformat()
+        with self.connection() as conn:
+            conn.execute(
+                """
+                INSERT INTO email_sync_checkpoints (
+                    provider, account_id, last_synced_at, last_history_id,
+                    last_message_timestamp, sync_status, messages_processed, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(provider, account_id) DO UPDATE SET
+                    last_synced_at = COALESCE(excluded.last_synced_at, email_sync_checkpoints.last_synced_at),
+                    last_history_id = COALESCE(excluded.last_history_id, email_sync_checkpoints.last_history_id),
+                    last_message_timestamp = COALESCE(excluded.last_message_timestamp, email_sync_checkpoints.last_message_timestamp),
+                    sync_status = COALESCE(excluded.sync_status, email_sync_checkpoints.sync_status),
+                    messages_processed = email_sync_checkpoints.messages_processed + excluded.messages_processed,
+                    updated_at = excluded.updated_at;
+                """,
+                (
+                    provider,
+                    account_id,
+                    last_synced_at or now,
+                    last_history_id,
+                    last_message_timestamp,
+                    sync_status or "HEALTHY",
+                    messages_increment,
+                    now,
+                    now,
+                ),
+            )
+
+    def is_raw_email_processed(self, provider: str, account_id: str, message_id: str) -> bool:
+        with self.connection() as conn:
+            cur = conn.execute(
+                "SELECT 1 FROM email_raw_messages WHERE provider = ? AND account_id = ? AND message_id = ?;",
+                (provider, account_id, message_id),
+            )
+            return cur.fetchone() is not None
+
+    def record_raw_email(self, msg_dict: Dict[str, Any]) -> int:
+        now = datetime.now(timezone.utc).isoformat()
+        with self.connection() as conn:
+            cur = conn.execute(
+                """
+                INSERT OR IGNORE INTO email_raw_messages (
+                    provider, account_id, message_id, thread_id, sender, sender_domain,
+                    recipients_json, subject, snippet, body_hash, received_at, processed_at,
+                    labels_json, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                """,
+                (
+                    msg_dict.get("provider", "unknown"),
+                    msg_dict.get("account_id", ""),
+                    msg_dict.get("message_id", ""),
+                    msg_dict.get("thread_id", ""),
+                    msg_dict.get("sender", ""),
+                    msg_dict.get("sender_domain", ""),
+                    json.dumps(msg_dict.get("recipients", [])),
+                    msg_dict.get("subject", ""),
+                    msg_dict.get("snippet", ""),
+                    msg_dict.get("body_hash", ""),
+                    msg_dict.get("received_at", now),
+                    now,
+                    json.dumps(msg_dict.get("labels", [])),
+                    now,
+                ),
+            )
+            return cur.lastrowid
+
+    # ---------------------------------------------------------
+    # Career Events & Application State Mutation
+    # ---------------------------------------------------------
+    def get_career_event(self, event_id: str) -> Optional[Dict[str, Any]]:
+        with self.connection() as conn:
+            cur = conn.execute("SELECT * FROM career_events WHERE id = ?;", (event_id,))
+            row = cur.fetchone()
+            if not row:
+                return None
+            res = dict(row)
+            res["evidence"] = json.loads(res["evidence_json"] or "{}")
+            res["candidate_matches"] = json.loads(res["candidate_matches_json"] or "[]")
+            return res
+
+    def list_career_events(
+        self,
+        opportunity_id: Optional[str] = None,
+        status: Optional[str] = None,
+        limit: int = 100,
+    ) -> List[Dict[str, Any]]:
+        query = "SELECT * FROM career_events WHERE 1=1"
+        params = []
+        if opportunity_id:
+            query += " AND opportunity_id = ?"
+            params.append(opportunity_id)
+        if status:
+            query += " AND status = ?"
+            params.append(status)
+        query += " ORDER BY occurred_at DESC, created_at DESC LIMIT ?;"
+        params.append(limit)
+
+        with self.connection() as conn:
+            cur = conn.execute(query, tuple(params))
+            results = []
+            for row in cur.fetchall():
+                d = dict(row)
+                d["evidence"] = json.loads(d["evidence_json"] or "{}")
+                d["candidate_matches"] = json.loads(d["candidate_matches_json"] or "[]")
+                results.append(d)
+            return results
+
+    def record_career_event_and_transition(
+        self,
+        event_data: Dict[str, Any],
+        raw_message_data: Optional[Dict[str, Any]] = None,
+        should_mutate_status: bool = False,
+        new_application_status: Optional[str] = None,
+        transition_notes: Optional[str] = None,
+    ) -> Tuple[str, bool]:
+        """
+        Atomically records:
+        1. Raw email ingestion record (if provided)
+        2. CareerEvent record
+        3. Application status transition (if should_mutate_status=True)
+        4. Application status history audit trail
+        
+        Returns: (event_id, did_mutate_status)
+        """
+        event_id = event_data["id"]
+        opp_id = event_data.get("opportunity_id")
+        now = datetime.now(timezone.utc).isoformat()
+
+        with self.connection() as conn:
+            # 1. Raw email record if provided
+            if raw_message_data:
+                conn.execute(
+                    """
+                    INSERT OR IGNORE INTO email_raw_messages (
+                        provider, account_id, message_id, thread_id, sender, sender_domain,
+                        recipients_json, subject, snippet, body_hash, received_at, processed_at,
+                        labels_json, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                    """,
+                    (
+                        raw_message_data.get("provider", "unknown"),
+                        raw_message_data.get("account_id", ""),
+                        raw_message_data.get("message_id", ""),
+                        raw_message_data.get("thread_id", ""),
+                        raw_message_data.get("sender", ""),
+                        raw_message_data.get("sender_domain", ""),
+                        json.dumps(raw_message_data.get("recipients", [])),
+                        raw_message_data.get("subject", ""),
+                        raw_message_data.get("snippet", ""),
+                        raw_message_data.get("body_hash", ""),
+                        raw_message_data.get("received_at", now),
+                        now,
+                        json.dumps(raw_message_data.get("labels", [])),
+                        now,
+                    ),
+                )
+
+            # 2. Insert CareerEvent
+            conn.execute(
+                """
+                INSERT INTO career_events (
+                    id, event_type, opportunity_id, occurred_at, source_provider,
+                    source_account_id, source_message_id, source_thread_id,
+                    confidence_score, confidence_level, status, evidence_json,
+                    candidate_matches_json, notes, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(source_provider, source_account_id, source_message_id) DO UPDATE SET
+                    status = excluded.status,
+                    notes = COALESCE(excluded.notes, career_events.notes),
+                    updated_at = excluded.updated_at;
+                """,
+                (
+                    event_id,
+                    event_data["event_type"],
+                    opp_id,
+                    event_data.get("occurred_at", now),
+                    event_data["source_provider"],
+                    event_data["source_account_id"],
+                    event_data["source_message_id"],
+                    event_data.get("source_thread_id", ""),
+                    float(event_data.get("confidence_score", 0.0)),
+                    event_data.get("confidence_level", "MEDIUM"),
+                    event_data.get("status", "PENDING_CONFIRMATION"),
+                    json.dumps(event_data.get("evidence", {})),
+                    json.dumps(event_data.get("candidate_matches", [])),
+                    event_data.get("notes"),
+                    event_data.get("created_at", now),
+                    now,
+                ),
+            )
+
+            # 3. Mutate application status if requested and opportunity exists
+            did_mutate = False
+            if should_mutate_status and opp_id and new_application_status:
+                cur = conn.execute("SELECT current_application_status FROM opportunities WHERE id = ?;", (opp_id,))
+                opp_row = cur.fetchone()
+                if opp_row:
+                    prev_status = opp_row["current_application_status"]
+                    if prev_status != new_application_status:
+                        # Update opportunity
+                        conn.execute(
+                            """
+                            UPDATE opportunities
+                            SET current_application_status = ?,
+                                updated_at = ?
+                            WHERE id = ?;
+                            """,
+                            (new_application_status, now, opp_id),
+                        )
+                        # Append history audit trail
+                        audit_note = f"[source={event_data['source_provider']}, event_id={event_id}] {transition_notes or ''}".strip()
+                        conn.execute(
+                            """
+                            INSERT INTO application_status_history (
+                                opportunity_id, previous_status, new_status, changed_at, notes
+                            ) VALUES (?, ?, ?, ?, ?);
+                            """,
+                            (opp_id, prev_status, new_application_status, now, audit_note),
+                        )
+                        did_mutate = True
+
+            return event_id, did_mutate
+
+    def confirm_career_event(self, event_id: str, opportunity_id: str, notes: Optional[str] = None) -> bool:
+        """
+        Manually confirms an ambiguous/pending CareerEvent and applies its transition.
+        """
+        event = self.get_career_event(event_id)
+        if not event:
+            return False
+
+        from career_os.email.lifecycle import LifecycleValidator
+        from career_os.email.models import EventType, ConfidenceLevel
+
+        opp = self.get_opportunity_by_id(opportunity_id)
+        if not opp:
+            return False
+
+        event_type = EventType(event["event_type"])
+        decision = LifecycleValidator.evaluate_transition(
+            current_status=opp["current_application_status"],
+            event_type=event_type,
+            confidence_level=ConfidenceLevel.HIGH,
+            is_actionable=True,
+        )
+
+        now = datetime.now(timezone.utc).isoformat()
+        with self.connection() as conn:
+            conn.execute(
+                """
+                UPDATE career_events
+                SET opportunity_id = ?,
+                    status = 'CONFIRMED',
+                    notes = COALESCE(?, notes),
+                    updated_at = ?
+                WHERE id = ?;
+                """,
+                (opportunity_id, notes or "Confirmed by user.", now, event_id),
+            )
+
+            if decision.should_mutate and decision.proposed_status != opp["current_application_status"]:
+                conn.execute(
+                    """
+                    UPDATE opportunities
+                    SET current_application_status = ?,
+                        updated_at = ?
+                    WHERE id = ?;
+                    """,
+                    (decision.proposed_status, now, opportunity_id),
+                )
+                audit_note = f"[source=manual_confirmation, event_id={event_id}] {notes or ''}".strip()
+                conn.execute(
+                    """
+                    INSERT INTO application_status_history (
+                        opportunity_id, previous_status, new_status, changed_at, notes
+                    ) VALUES (?, ?, ?, ?, ?);
+                    """,
+                    (opportunity_id, opp["current_application_status"], decision.proposed_status, now, audit_note),
+                )
+
+        return True
+
+    def dismiss_career_event(self, event_id: str, notes: Optional[str] = None) -> bool:
+        now = datetime.now(timezone.utc).isoformat()
+        with self.connection() as conn:
+            cur = conn.execute(
+                """
+                UPDATE career_events
+                SET status = 'REJECTED',
+                    notes = COALESCE(?, notes),
+                    updated_at = ?
+                WHERE id = ?;
+                """,
+                (notes or "Dismissed by user.", now, event_id),
+            )
+            return cur.rowcount > 0
+
+    def get_opportunity_timeline(self, opportunity_id: str) -> List[Dict[str, Any]]:
+        """Returns consolidated timeline of status history and career events for an opportunity."""
+        with self.connection() as conn:
+            # 1. Fetch status history
+            hist_cur = conn.execute(
+                "SELECT * FROM application_status_history WHERE opportunity_id = ? ORDER BY changed_at ASC;",
+                (opportunity_id,),
+            )
+            history = [
+                {
+                    "type": "STATUS_CHANGE",
+                    "timestamp": r["changed_at"],
+                    "previous_status": r["previous_status"],
+                    "new_status": r["new_status"],
+                    "notes": r["notes"],
+                }
+                for r in hist_cur.fetchall()
+            ]
+
+            # 2. Fetch career events
+            ev_cur = conn.execute(
+                "SELECT * FROM career_events WHERE opportunity_id = ? ORDER BY occurred_at ASC;",
+                (opportunity_id,),
+            )
+            events = [
+                {
+                    "type": "CAREER_EVENT",
+                    "id": r["id"],
+                    "event_type": r["event_type"],
+                    "timestamp": r["occurred_at"],
+                    "confidence_level": r["confidence_level"],
+                    "status": r["status"],
+                    "evidence": json.loads(r["evidence_json"] or "{}"),
+                    "notes": r["notes"],
+                }
+                for r in ev_cur.fetchall()
+            ]
+
+            timeline = history + events
+            timeline.sort(key=lambda x: x["timestamp"])
+            return timeline
+

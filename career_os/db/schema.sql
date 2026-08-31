@@ -146,6 +146,62 @@ CREATE TABLE IF NOT EXISTS evaluation_profiles (
     created_at TEXT NOT NULL
 );
 
+-- 9. Email Sync Checkpoints (Durable synchronization tracking)
+CREATE TABLE IF NOT EXISTS email_sync_checkpoints (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    provider TEXT NOT NULL,                    -- 'gmail', 'mock', 'outlook'
+    account_id TEXT NOT NULL,                  -- user account email
+    last_synced_at TEXT NOT NULL,              -- ISO8601 UTC
+    last_history_id TEXT,                      -- Gmail API historyId
+    last_message_timestamp TEXT,               -- ISO8601 UTC of newest message processed
+    sync_status TEXT NOT NULL DEFAULT 'HEALTHY',-- 'HEALTHY', 'ERROR', 'IN_PROGRESS'
+    messages_processed INTEGER DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE(provider, account_id)
+);
+
+-- 10. Email Raw Messages Ingestion Index (Deduplication & Data Minimization)
+CREATE TABLE IF NOT EXISTS email_raw_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    provider TEXT NOT NULL,
+    account_id TEXT NOT NULL,
+    message_id TEXT NOT NULL,
+    thread_id TEXT,
+    sender TEXT,
+    sender_domain TEXT,
+    recipients_json TEXT,
+    subject TEXT,
+    snippet TEXT,
+    body_hash TEXT NOT NULL,
+    received_at TEXT NOT NULL,
+    processed_at TEXT NOT NULL,
+    labels_json TEXT,
+    created_at TEXT NOT NULL,
+    UNIQUE(provider, account_id, message_id)
+);
+
+-- 11. Career Events (Provider-Independent Evidence & Timeline Records)
+CREATE TABLE IF NOT EXISTS career_events (
+    id TEXT PRIMARY KEY,                       -- e.g., 'evt_...'
+    event_type TEXT NOT NULL,                  -- 'APPLICATION_CONFIRMATION', 'INTERVIEW_INVITATION', 'OFFER', etc.
+    opportunity_id TEXT REFERENCES opportunities(id) ON DELETE SET NULL,
+    occurred_at TEXT NOT NULL,                 -- ISO8601 UTC
+    source_provider TEXT NOT NULL,             -- 'gmail', 'mock'
+    source_account_id TEXT NOT NULL,
+    source_message_id TEXT NOT NULL,
+    source_thread_id TEXT,
+    confidence_score REAL NOT NULL,
+    confidence_level TEXT NOT NULL,            -- 'HIGH', 'MEDIUM', 'LOW', 'AMBIGUOUS'
+    status TEXT NOT NULL DEFAULT 'PENDING_CONFIRMATION', -- 'AUTOMATIC_APPLIED', 'PENDING_CONFIRMATION', 'CONFIRMED', 'REJECTED', 'IGNORED'
+    evidence_json TEXT NOT NULL,               -- JSON: subject, sender, snippet, extracted_metadata
+    candidate_matches_json TEXT,               -- JSON: list of potential matching opportunities
+    notes TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE(source_provider, source_account_id, source_message_id)
+);
+
 -- Performance Indexes
 CREATE INDEX IF NOT EXISTS idx_opportunities_canonical_key ON opportunities(canonical_key);
 CREATE INDEX IF NOT EXISTS idx_opportunities_app_status ON opportunities(current_application_status);
@@ -155,3 +211,9 @@ CREATE INDEX IF NOT EXISTS idx_run_opps_run_id ON discovery_run_opportunities(di
 CREATE INDEX IF NOT EXISTS idx_evaluations_opp_id ON evaluations(opportunity_id);
 CREATE INDEX IF NOT EXISTS idx_evaluations_content_hash ON evaluations(content_hash);
 CREATE INDEX IF NOT EXISTS idx_human_reviews_opp_id ON human_reviews(opportunity_id);
+CREATE INDEX IF NOT EXISTS idx_career_events_opp_id ON career_events(opportunity_id);
+CREATE INDEX IF NOT EXISTS idx_career_events_status ON career_events(status);
+CREATE INDEX IF NOT EXISTS idx_career_events_source_msg ON career_events(source_provider, source_account_id, source_message_id);
+CREATE INDEX IF NOT EXISTS idx_raw_emails_msg ON email_raw_messages(provider, account_id, message_id);
+CREATE INDEX IF NOT EXISTS idx_sync_checkpoints_acc ON email_sync_checkpoints(provider, account_id);
+

@@ -43,12 +43,32 @@ DISCOVERY_HUMAN_FILE = BASE_DIR / "discovery_human_review.json"
 DISCOVERY_EVALUATIONS_FILE = BASE_DIR / "india_discovery_llm_evaluations.json"
 SQLITE_DB_FILE = BASE_DIR / "career_os.db"
 
-# Import SQLite Repository
+# Import SQLite Repository & Email Infrastructure
 try:
     from career_os.db.repository import CareerOSRepository
     db_repo = CareerOSRepository(db_path=str(SQLITE_DB_FILE))
-except ImportError:
+    db_repo.init_db()
+except Exception:
     db_repo = None
+
+try:
+    from career_os.email import (
+        TokenStore,
+        LocalSecureFileTokenStore,
+        GoogleOAuthClient,
+        OAuthConfigurationError,
+        EmailSyncService,
+        MockEmailAdapter,
+        GmailEmailAdapter,
+        EmailClassifier,
+        OpportunityMatcher,
+        format_dry_run_report,
+    )
+    token_store = LocalSecureFileTokenStore()
+    oauth_client = GoogleOAuthClient(token_store=token_store)
+except ImportError:
+    token_store = None
+    oauth_client = None
 
 
 def normalize_geography(loc_str: str) -> str:
@@ -440,6 +460,18 @@ class ReviewRequestHandler(SimpleHTTPRequestHandler):
         elif parsed.path == "/api/discovery/summary":
             self.send_discovery_api_summary()
             
+        # Gmail & Lifecycle endpoints
+        elif parsed.path == "/api/gmail/status":
+            self.send_gmail_status()
+        elif parsed.path == "/api/gmail/auth-url":
+            self.send_gmail_auth_url()
+        elif parsed.path == "/api/gmail/callback":
+            self.handle_gmail_oauth_callback(parsed)
+        elif parsed.path == "/api/events":
+            self.send_career_events(parsed)
+        elif parsed.path == "/api/timeline":
+            self.send_opportunity_timeline(parsed)
+
         # Page views
         elif parsed.path in ("/", "/index.html"):
             self.send_file_content(STATIC_DIR / "index.html", "text/html; charset=utf-8")
@@ -462,7 +494,13 @@ class ReviewRequestHandler(SimpleHTTPRequestHandler):
         content_length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(content_length)
 
-        if parsed.path == "/api/decide":
+        if parsed.path == "/api/gmail/disconnect":
+            self.handle_gmail_disconnect(body)
+        elif parsed.path == "/api/gmail/sync":
+            self.handle_gmail_sync(body)
+        elif parsed.path == "/api/events/decide":
+            self.handle_event_decision(body)
+        elif parsed.path == "/api/decide":
             try:
                 payload = json.loads(body.decode("utf-8"))
                 job_id = payload.get("job_id")
@@ -665,6 +703,202 @@ class ReviewRequestHandler(SimpleHTTPRequestHandler):
             decisions_data.get("decisions", {})
         )
         self.send_json_response(summary)
+
+    # ---------------------------------------------------------
+    # Gmail Integration & Lifecycle Endpoints
+    # ---------------------------------------------------------
+    def send_gmail_status(self):
+        """Returns Gmail connection status, active account email, sync metrics, and pending events."""
+        accounts = token_store.list_accounts("gmail") if token_store else []
+        active_account = accounts[0] if accounts else None
+        is_connected = bool(active_account and token_store and token_store.has_token("gmail", active_account))
+
+        checkpoint = None
+        pending_events_count = 0
+
+        if db_repo is not None:
+            if active_account:
+                checkpoint = db_repo.get_or_create_email_sync_checkpoint("gmail", active_account)
+            pending_events = db_repo.list_career_events(status="PENDING_CONFIRMATION")
+            pending_events_count = len(pending_events)
+
+        oauth_configured = bool(oauth_client and oauth_client.client_id and oauth_client.client_secret)
+
+        self.send_json_response({
+            "connected": is_connected,
+            "account_email": active_account,
+            "provider": "gmail" if is_connected else "mock",
+            "oauth_configured": oauth_configured,
+            "checkpoint": checkpoint,
+            "pending_events_count": pending_events_count,
+        })
+
+    def send_gmail_auth_url(self):
+        """Generates OAuth authorization URL or returns configuration error."""
+        if not oauth_client:
+            self.send_json_response({"error": "OAuth client not initialized."}, 500)
+            return
+
+        try:
+            url, state = oauth_client.get_authorization_url()
+            self.send_json_response({"auth_url": url, "state": state})
+        except OAuthConfigurationError as e:
+            self.send_json_response({
+                "error": str(e),
+                "is_config_error": True,
+                "hint": "Set GMAIL_CLIENT_ID and GMAIL_CLIENT_SECRET in .env"
+            }, 400)
+        except Exception as e:
+            self.send_json_response({"error": str(e)}, 500)
+
+    def handle_gmail_oauth_callback(self, parsed):
+        """Handles Google OAuth2 redirect callback."""
+        query_params = urllib.parse.parse_qs(parsed.query)
+        code = query_params.get("code", [None])[0]
+        error = query_params.get("error", [None])[0]
+
+        if error:
+            self.send_response(302)
+            self.send_header("Location", f"/discovery?gmail_error={urllib.parse.quote(error)}")
+            self.end_headers()
+            return
+
+        if not code:
+            self.send_response(302)
+            self.send_header("Location", "/discovery?gmail_error=no_code_provided")
+            self.end_headers()
+            return
+
+        try:
+            res = oauth_client.exchange_code_for_tokens(code)
+            account_email = res.get("account_email", "")
+            self.send_response(302)
+            self.send_header("Location", f"/discovery?gmail_status=connected&email={urllib.parse.quote(account_email)}")
+            self.end_headers()
+        except Exception as e:
+            self.send_response(302)
+            self.send_header("Location", f"/discovery?gmail_error={urllib.parse.quote(str(e))}")
+            self.end_headers()
+
+    def handle_gmail_disconnect(self, body: bytes):
+        """Disconnects active Gmail account."""
+        try:
+            payload = json.loads(body.decode("utf-8")) if body else {}
+            account_email = payload.get("account_email")
+            if not account_email and token_store:
+                accounts = token_store.list_accounts("gmail")
+                account_email = accounts[0] if accounts else None
+
+            if account_email and token_store:
+                token_store.delete_token("gmail", account_email)
+
+            self.send_json_response({"status": "success", "message": "Gmail account disconnected."})
+        except Exception as e:
+            self.send_json_response({"error": str(e)}, 500)
+
+    def handle_gmail_sync(self, body: bytes):
+        """
+        Executes Gmail sync in dry-run mode (default) or live mutation mode upon explicit approval.
+        """
+        try:
+            payload = json.loads(body.decode("utf-8")) if body else {}
+            dry_run = payload.get("dry_run", True)  # Hard dry-run default!
+            adapter_choice = payload.get("adapter_type", "auto")
+            max_results = int(payload.get("max_results", 50))
+            after_date = payload.get("after_date")
+
+            accounts = token_store.list_accounts("gmail") if token_store else []
+            active_account = accounts[0] if accounts else None
+
+            # Choose adapter
+            if adapter_choice == "gmail" or (adapter_choice == "auto" and active_account and token_store.has_token("gmail", active_account)):
+                adapter = GmailEmailAdapter(account_email=active_account, token_store=token_store, oauth_client=oauth_client)
+            else:
+                adapter = MockEmailAdapter()
+
+            if db_repo is None:
+                self.send_json_response({"error": "Database repository is not available."}, 500)
+                return
+
+            sync_service = EmailSyncService(
+                adapter=adapter,
+                repository=db_repo,
+                classifier=EmailClassifier(),
+                matcher=OpportunityMatcher(),
+            )
+
+            report = sync_service.run_sync(
+                max_results=max_results,
+                after_date=after_date,
+                dry_run=dry_run,
+            )
+
+            formatted_ascii = format_dry_run_report(report)
+
+            self.send_json_response({
+                "status": "success",
+                "dry_run": dry_run,
+                "report": report.to_dict(),
+                "formatted_preview": formatted_ascii,
+            })
+        except Exception as e:
+            self.send_json_response({"error": str(e)}, 500)
+
+    def send_career_events(self, parsed):
+        """Lists CareerEvents with optional filtering by opportunity_id or status."""
+        if db_repo is None:
+            self.send_json_response({"events": []})
+            return
+
+        query_params = urllib.parse.parse_qs(parsed.query)
+        opp_id = query_params.get("opportunity_id", [None])[0]
+        status = query_params.get("status", [None])[0]
+
+        events = db_repo.list_career_events(opportunity_id=opp_id, status=status)
+        self.send_json_response({"events": events, "count": len(events)})
+
+    def send_opportunity_timeline(self, parsed):
+        """Returns consolidated application history and career event timeline for an opportunity."""
+        query_params = urllib.parse.parse_qs(parsed.query)
+        opp_id = query_params.get("opportunity_id", [None])[0]
+        if not opp_id or db_repo is None:
+            self.send_json_response({"timeline": []})
+            return
+
+        timeline = db_repo.get_opportunity_timeline(opp_id)
+        self.send_json_response({"opportunity_id": opp_id, "timeline": timeline})
+
+    def handle_event_decision(self, body: bytes):
+        """Handles manual confirmation or dismissal of an ambiguous/pending CareerEvent."""
+        try:
+            payload = json.loads(body.decode("utf-8")) if body else {}
+            event_id = payload.get("event_id")
+            opportunity_id = payload.get("opportunity_id")
+            action = payload.get("action", "confirm").lower()
+            notes = payload.get("notes", "")
+
+            if not event_id:
+                self.send_json_response({"error": "event_id is required"}, 400)
+                return
+
+            if db_repo is None:
+                self.send_json_response({"error": "Database repository is not available."}, 500)
+                return
+
+            if action == "confirm":
+                if not opportunity_id:
+                    self.send_json_response({"error": "opportunity_id is required to confirm an event."}, 400)
+                    return
+                success = db_repo.confirm_career_event(event_id=event_id, opportunity_id=opportunity_id, notes=notes)
+            elif action == "dismiss":
+                success = db_repo.dismiss_career_event(event_id=event_id, notes=notes)
+            else:
+                self.send_json_response({"error": f"Invalid action: {action}"}, 400)
+                return
+
+            self.send_json_response({"status": "success", "event_id": event_id, "action": action, "updated": success})
+        except Exception as e:
+            self.send_json_response({"error": str(e)}, 500)
 
 
 def run_server():

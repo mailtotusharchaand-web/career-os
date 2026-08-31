@@ -86,6 +86,7 @@ const shortcutsBtn = document.getElementById("shortcutsBtn");
 document.addEventListener("DOMContentLoaded", () => {
   fetchDiscoveryData();
   setupEventListeners();
+  initGmailIntegration();
 });
 
 async function fetchDiscoveryData() {
@@ -481,6 +482,9 @@ function renderCurrentJob() {
   // Update progress subtext
   queueProgress.textContent = `(Item ${currentJobIndex + 1} of ${currentFilteredJobs.length})`;
   highlightActiveNavigatorItem();
+
+  // Load Application Lifecycle & Evidence Timeline
+  loadOpportunityTimeline(job.job_id);
 }
 
 function selectVerdict(verdict) {
@@ -963,5 +967,346 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+// =========================================================
+// Application Lifecycle & Gmail Timeline Functions
+// =========================================================
+
+async function loadOpportunityTimeline(jobId) {
+  const listEl = document.getElementById("timelineList");
+  const badgeEl = document.getElementById("timelineStatusBadge");
+  if (!listEl || !badgeEl) return;
+
+  try {
+    const res = await fetch(`/api/timeline?opportunity_id=${encodeURIComponent(jobId)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const timeline = data.timeline || [];
+
+    badgeEl.textContent = `${timeline.length} Record${timeline.length === 1 ? "" : "s"}`;
+
+    if (timeline.length === 0) {
+      listEl.innerHTML = `<div style="font-size: 0.8125rem; color: var(--text-muted); font-style: italic; padding: 0.5rem 0;">No Gmail events or status transitions recorded yet for this opportunity.</div>`;
+      return;
+    }
+
+    listEl.innerHTML = timeline.map(item => {
+      const type = item.type || "EVENT";
+      const isStatusChange = type === "APPLICATION_STATUS_CHANGE";
+      
+      let badgeBg = "rgba(56, 189, 248, 0.15)";
+      let badgeColor = "var(--accent-blue)";
+      let badgeLabel = type.replace(/_/g, " ");
+
+      if (type.includes("OFFER")) {
+        badgeBg = "rgba(245, 158, 11, 0.2)";
+        badgeColor = "var(--accent-amber)";
+      } else if (type.includes("INTERVIEW")) {
+        badgeBg = "rgba(16, 185, 129, 0.2)";
+        badgeColor = "var(--accent-emerald)";
+      } else if (type.includes("REJECTION")) {
+        badgeBg = "rgba(244, 63, 94, 0.2)";
+        badgeColor = "var(--accent-rose)";
+      } else if (type.includes("CONFIRMATION")) {
+        badgeBg = "rgba(139, 92, 246, 0.2)";
+        badgeColor = "var(--accent-violet)";
+      }
+
+      const dateStr = item.timestamp ? new Date(item.timestamp).toLocaleString() : "Unknown Time";
+
+      return `
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.45rem; border-radius: 4px; background: ${badgeBg}; color: ${badgeColor}; border: 1px solid ${badgeColor};">
+                ${badgeLabel}
+              </span>
+              ${item.transition ? `<span style="font-size: 0.75rem; font-weight: 600; color: var(--text-primary); font-family: var(--font-mono);">${escapeHtml(item.transition)}</span>` : ""}
+            </div>
+            <span style="font-size: 0.7rem; color: var(--text-muted); font-family: var(--font-mono);">${dateStr}</span>
+          </div>
+          ${item.subject ? `<div style="font-size: 0.8125rem; font-weight: 600; color: var(--text-primary); margin-top: 0.15rem;">Subject: "${escapeHtml(item.subject)}"</div>` : ""}
+          ${item.sender ? `<div style="font-size: 0.72rem; color: var(--text-secondary);">From: <span style="font-family: var(--font-mono);">${escapeHtml(item.sender)}</span></div>` : ""}
+          ${item.reason ? `<div style="font-size: 0.75rem; color: var(--text-muted); font-style: italic; background: rgba(0,0,0,0.2); padding: 0.3rem 0.5rem; border-radius: 4px; margin-top: 0.2rem;">${escapeHtml(item.reason)}</div>` : ""}
+        </div>
+      `;
+    }).join("");
+
+  } catch (err) {
+    console.error("Failed to load timeline:", err);
+    listEl.innerHTML = `<div style="font-size: 0.8125rem; color: var(--accent-rose);">Error loading timeline: ${escapeHtml(err.message)}</div>`;
+  }
+}
+
+// =========================================================
+// Gmail Synchronization & Review Modal Integration
+// =========================================================
+
+function initGmailIntegration() {
+  const gmailSyncBtn = document.getElementById("gmailSyncBtn");
+  const gmailModal = document.getElementById("gmailModal");
+  const closeGmailModalBtn = document.getElementById("closeGmailModalBtn");
+  const connectGmailBtn = document.getElementById("connectGmailBtn");
+  const disconnectGmailBtn = document.getElementById("disconnectGmailBtn");
+  const runDryRunBtn = document.getElementById("runDryRunBtn");
+  const applyChangesBtn = document.getElementById("applyChangesBtn");
+  const syncAdapterSelect = document.getElementById("syncAdapterSelect");
+  const syncAfterDate = document.getElementById("syncAfterDate");
+  const dryRunPreviewContainer = document.getElementById("dryRunPreviewContainer");
+  const dryRunOutput = document.getElementById("dryRunOutput");
+  const pendingEventsList = document.getElementById("pendingEventsList");
+  const pendingEventsBadge = document.getElementById("pendingEventsBadge");
+
+  // Check URL query parameters for OAuth callback feedback
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("gmail_status") === "connected") {
+    alert(`Gmail connected successfully! Account: ${params.get("email") || "Active Account"}`);
+    window.history.replaceState({}, document.title, window.location.pathname);
+  } else if (params.get("gmail_error")) {
+    alert(`Gmail connection error: ${params.get("gmail_error")}`);
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+
+  // Open modal
+  gmailSyncBtn?.addEventListener("click", () => {
+    if (gmailModal) gmailModal.style.display = "flex";
+    refreshGmailStatus();
+    loadPendingEvents();
+  });
+
+  // Close modal
+  closeGmailModalBtn?.addEventListener("click", () => {
+    if (gmailModal) gmailModal.style.display = "none";
+  });
+
+  // Connect Gmail Button (OAuth)
+  connectGmailBtn?.addEventListener("click", async () => {
+    try {
+      const res = await fetch("/api/gmail/auth-url");
+      const data = await res.json();
+      if (!res.ok) {
+        if (data.is_config_error) {
+          alert(`Google OAuth is not configured yet:\n\n${data.error}\n\nHint: ${data.hint}\n\nYou can still test using the Deterministic Mock Adapter!`);
+        } else {
+          alert(`OAuth error: ${data.error || "Failed to generate auth URL"}`);
+        }
+        return;
+      }
+      if (data.auth_url) {
+        window.location.href = data.auth_url;
+      }
+    } catch (err) {
+      alert(`Error initiating Google OAuth: ${err.message}`);
+    }
+  });
+
+  // Disconnect Gmail Button
+  disconnectGmailBtn?.addEventListener("click", async () => {
+    if (!confirm("Are you sure you want to disconnect your Gmail account from Career OS?")) return;
+    try {
+      const res = await fetch("/api/gmail/disconnect", { method: "POST" });
+      if (res.ok) {
+        alert("Gmail account disconnected.");
+        refreshGmailStatus();
+      }
+    } catch (err) {
+      alert(`Error disconnecting: ${err.message}`);
+    }
+  });
+
+  // Run Dry-Run Preview
+  runDryRunBtn?.addEventListener("click", async () => {
+    const adapterType = syncAdapterSelect?.value || "auto";
+    const afterDate = syncAfterDate?.value || null;
+
+    runDryRunBtn.disabled = true;
+    runDryRunBtn.innerHTML = "Scanning...";
+
+    try {
+      const res = await fetch("/api/gmail/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          dry_run: true,
+          adapter_type: adapterType,
+          after_date: afterDate,
+          max_results: 50
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+
+      if (dryRunPreviewContainer && dryRunOutput) {
+        dryRunPreviewContainer.style.display = "block";
+        dryRunOutput.textContent = data.formatted_preview || JSON.stringify(data.report, null, 2);
+      }
+
+      loadPendingEvents();
+    } catch (err) {
+      alert(`Error during dry-run preview: ${err.message}`);
+    } finally {
+      runDryRunBtn.disabled = false;
+      runDryRunBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Run Dry-Run Preview`;
+    }
+  });
+
+  // Approve & Apply State Changes (Live Mutation)
+  applyChangesBtn?.addEventListener("click", async () => {
+    const adapterType = syncAdapterSelect?.value || "auto";
+    const afterDate = syncAfterDate?.value || null;
+
+    if (!confirm("Are you sure you want to apply these proposed state transitions to your Career OS database?\n\nThis will mutate application statuses and record auditable career events.")) {
+      return;
+    }
+
+    applyChangesBtn.disabled = true;
+    applyChangesBtn.innerHTML = "Applying...";
+
+    try {
+      const res = await fetch("/api/gmail/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          dry_run: false, // Explicit approved live mutation!
+          adapter_type: adapterType,
+          after_date: afterDate,
+          max_results: 50
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+
+      if (dryRunOutput) {
+        dryRunOutput.textContent = data.formatted_preview || "Live mutations applied successfully.";
+      }
+
+      alert(`Sync applied successfully! ${data.report?.mutations_applied || 0} transitions recorded.`);
+      
+      // Refresh current job view and timeline
+      await fetchDiscoveryData();
+      if (currentFilteredJobs.length > 0 && currentFilteredJobs[currentJobIndex]) {
+        loadOpportunityTimeline(currentFilteredJobs[currentJobIndex].job_id);
+      }
+      loadPendingEvents();
+    } catch (err) {
+      alert(`Error applying changes: ${err.message}`);
+    } finally {
+      applyChangesBtn.disabled = false;
+      applyChangesBtn.innerHTML = "Approve & Apply State Changes";
+    }
+  });
+
+  async function refreshGmailStatus() {
+    const statusText = document.getElementById("gmailStatusText");
+    const checkpointText = document.getElementById("gmailCheckpointText");
+    if (!statusText) return;
+
+    try {
+      const res = await fetch("/api/gmail/status");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      if (data.connected) {
+        statusText.innerHTML = `<span style="color: var(--accent-emerald);">● Connected: <strong>${escapeHtml(data.account_email)}</strong></span>`;
+        if (connectGmailBtn) connectGmailBtn.style.display = "none";
+        if (disconnectGmailBtn) disconnectGmailBtn.style.display = "inline-flex";
+      } else {
+        statusText.innerHTML = `<span style="color: var(--text-muted);">○ Not Connected (Using Deterministic Mock Adapter)</span>`;
+        if (connectGmailBtn) connectGmailBtn.style.display = "inline-flex";
+        if (disconnectGmailBtn) disconnectGmailBtn.style.display = "none";
+      }
+
+      if (checkpointText) {
+        if (data.checkpoint && data.checkpoint.last_sync_timestamp) {
+          checkpointText.textContent = `Last Synced: ${new Date(data.checkpoint.last_sync_timestamp).toLocaleString()} • Processed: ${data.checkpoint.messages_processed || 0} msgs`;
+        } else {
+          checkpointText.textContent = `No live sync checkpoint recorded yet.`;
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load Gmail status:", err);
+      statusText.textContent = "Unable to fetch status";
+    }
+  }
+
+  async function loadPendingEvents() {
+    if (!pendingEventsList || !pendingEventsBadge) return;
+
+    try {
+      const res = await fetch("/api/events?status=PENDING_CONFIRMATION");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const events = data.events || [];
+
+      pendingEventsBadge.textContent = `${events.length} Pending`;
+
+      if (events.length === 0) {
+        pendingEventsList.innerHTML = `<div style="font-size: 0.8125rem; color: var(--text-muted); font-style: italic;">No pending or ambiguous events requiring human confirmation.</div>`;
+        return;
+      }
+
+      pendingEventsList.innerHTML = events.map(ev => {
+        return `
+          <div style="background: var(--bg-card); border: 1px solid var(--accent-amber); border-radius: 6px; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.7rem; font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 3px; background: rgba(245, 158, 11, 0.2); color: var(--accent-amber);">
+                ${escapeHtml(ev.event_type)} (Ambiguous / Low Confidence)
+              </span>
+              <span style="font-size: 0.7rem; color: var(--text-muted);">${ev.event_timestamp ? new Date(ev.event_timestamp).toLocaleDateString() : ""}</span>
+            </div>
+            <div style="font-size: 0.8125rem; font-weight: 600; color: var(--text-primary);">"${escapeHtml(ev.source_subject || "No Subject")}"</div>
+            <div style="font-size: 0.72rem; color: var(--text-secondary);">From: <span style="font-family: var(--font-mono);">${escapeHtml(ev.source_sender || "")}</span></div>
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; align-items: center;">
+              <input type="text" placeholder="Opportunity ID (e.g. disc_0001)" id="opp_input_${ev.id}" value="${ev.opportunity_id || ""}" style="background: var(--bg-subtle); color: var(--text-primary); border: 1px solid var(--border-color); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; flex: 1;">
+              <button class="action-btn primary" onclick="decideEvent('${ev.id}', 'confirm')" style="font-size: 0.75rem; padding: 0.25rem 0.6rem; background: #10b981; border-color: #10b981;">Confirm Match</button>
+              <button class="action-btn secondary" onclick="decideEvent('${ev.id}', 'dismiss')" style="font-size: 0.75rem; padding: 0.25rem 0.6rem; color: var(--accent-rose);">Dismiss</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+    } catch (err) {
+      console.error("Failed to load pending events:", err);
+    }
+  }
+
+  // Global helper for event triage buttons
+  window.decideEvent = async function(eventId, action) {
+    const oppInput = document.getElementById(`opp_input_${eventId}`);
+    const oppId = oppInput ? oppInput.value.trim() : "";
+
+    if (action === "confirm" && !oppId) {
+      alert("Please provide the Opportunity ID to link this event to.");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/events/decide", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event_id: eventId,
+          opportunity_id: oppId,
+          action: action,
+          notes: "Manually resolved via triage modal"
+        })
+      });
+
+      if (res.ok) {
+        loadPendingEvents();
+        if (currentFilteredJobs[currentJobIndex]) {
+          loadOpportunityTimeline(currentFilteredJobs[currentJobIndex].job_id);
+        }
+      } else {
+        const err = await res.json();
+        alert(`Error: ${err.error}`);
+      }
+    } catch (e) {
+      alert(`Error updating event: ${e.message}`);
+    }
+  };
 }
 

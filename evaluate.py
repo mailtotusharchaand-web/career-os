@@ -62,6 +62,17 @@ INTER_CALL_PAUSE = 4          # Seconds between LLM calls — free tier rate lim
 
 # Explicit candidate employment constraints (the ONLY domain-free hard filters)
 # These represent genuine "I won't do this" constraints, not opportunity assumptions.
+EXCLUDED_EMPLOYMENT_TITLE_PATTERNS = [
+    (r"\binterns?\b", "intern"),
+    (r"\binternships?\b", "internship"),
+    (r"\btrainees?\b", "trainee"),
+    (r"\bco-?ops?\b", "co-op"),
+    (r"\bapprentices?(?:ship)?\b", "apprentice"),
+    (r"\bpart[\s-]time\b", "part-time"),
+    (r"\bsummer\s+intern(?:ship)?\b", "summer intern"),
+    (r"\bwinter\s+intern(?:ship)?\b", "winter intern"),
+    (r"\bfellowships?\b", "fellowship"),
+]
 EXCLUDED_EMPLOYMENT_TITLE_KEYWORDS = [
     "intern", "internship", "trainee", "co-op", "coop", "apprentice",
     "part-time", "part time", "summer intern", "winter intern", "fellowship",
@@ -153,16 +164,16 @@ def load_jobs(jobs_path: str) -> list:
 
 def _gate_employment_type(job: dict) -> tuple:
     """
-    Reject internships, part-time, and temporary roles.
+    Reject internships, part-time, and temporary roles using robust word-boundary matching.
     Constraint source: candidate explicitly does not want these.
     Returns (passes: bool, reason: str)
     """
-    title_lower = job.get("title", "").lower()
+    title = job.get("title", "")
     job_type_lower = (job.get("job_type") or "").lower()
 
-    for kw in EXCLUDED_EMPLOYMENT_TITLE_KEYWORDS:
-        if kw in title_lower:
-            return False, f"employment_type: excluded keyword in title: '{kw}'"
+    for pattern, name in EXCLUDED_EMPLOYMENT_TITLE_PATTERNS:
+        if re.search(pattern, title, re.IGNORECASE):
+            return False, f"employment_type: excluded keyword in title: '{name}'"
 
     for val in EXCLUDED_EMPLOYMENT_TYPE_VALUES:
         if val in job_type_lower:

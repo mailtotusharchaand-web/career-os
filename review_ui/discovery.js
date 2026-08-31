@@ -294,8 +294,10 @@ function renderNavigator() {
 
     // LLM Score badge
     let llmBadgeHtml = "";
-    if (job.gate_failed) {
-      llmBadgeHtml = `<span style="font-size: 0.65rem; font-family: var(--font-mono); font-weight: 700; padding: 0.1rem 0.35rem; border-radius: 3px; background: rgba(244, 63, 94, 0.15); color: var(--accent-rose); border: 1px solid rgba(244, 63, 94, 0.3);">GATE REJ [0]</span>`;
+    if (job.gate_failed || job.evaluation_status === "GATE_REJECTED") {
+      llmBadgeHtml = `<span style="font-size: 0.65rem; font-family: var(--font-mono); font-weight: 700; padding: 0.1rem 0.35rem; border-radius: 3px; background: rgba(244, 63, 94, 0.15); color: var(--accent-rose); border: 1px solid rgba(244, 63, 94, 0.3);">GATE REJ</span>`;
+    } else if (job.evaluation_status === "FAILED") {
+      llmBadgeHtml = `<span style="font-size: 0.65rem; font-family: var(--font-mono); font-weight: 700; padding: 0.1rem 0.35rem; border-radius: 3px; background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">FAILED</span>`;
     } else if (job.llm_evaluation && (job.llm_evaluation.score !== null && job.llm_evaluation.score !== undefined || job.llm_evaluation.overall_score !== null && job.llm_evaluation.overall_score !== undefined)) {
       const rec = job.llm_evaluation.recommendation || "Skip";
       const score = (job.llm_evaluation.score !== null && job.llm_evaluation.score !== undefined) ? job.llm_evaluation.score : job.llm_evaluation.overall_score;
@@ -393,7 +395,11 @@ function renderCurrentJob() {
   jobDescription.textContent = job.description || "No full job description provided by source.";
 
   // LLM Evaluation Section
-  if (job.llm_evaluation && (job.evaluation_status === "EVALUATED" || job.evaluation_status === "REUSED" || !job.evaluation_status)) {
+  const isGateRejected = job.gate_failed || job.evaluation_status === "GATE_REJECTED";
+  const isFailed = job.evaluation_status === "FAILED";
+  const hasLlmEval = job.llm_evaluation && (job.llm_evaluation.score !== null && job.llm_evaluation.score !== undefined || job.llm_evaluation.recommendation);
+
+  if (hasLlmEval && !isGateRejected && (job.evaluation_status === "EVALUATED" || job.evaluation_status === "REUSED" || !job.evaluation_status)) {
     const ev = job.llm_evaluation;
     const rec = ev.recommendation || "Skip";
     const scoreVal = (ev.score !== null && ev.score !== undefined) ? ev.score : ev.overall_score;
@@ -442,6 +448,48 @@ function renderCurrentJob() {
       : `<li>No critical capability gaps identified</li>`;
 
     llmReasoning.textContent = ev.reasoning && ev.reasoning !== "UNKNOWN" ? ev.reasoning : (ev.evidence || "No detailed reasoning text provided.");
+  } else if (isGateRejected) {
+    const reasons = job.gate_failure_reasons || [];
+    const passed = job.gate_passed_checks || [];
+
+    llmRecBadge.textContent = "GATE REJECTED — PRE-LLM";
+    llmRecBadge.style.background = "rgba(244, 63, 94, 0.15)";
+    llmRecBadge.style.color = "var(--accent-rose)";
+    llmRecBadge.style.borderColor = "rgba(244, 63, 94, 0.3)";
+    llmScorePill.textContent = "SCORE: — (GATE REJECTED)";
+    llmRoleFit.textContent = "—";
+    llmExpFit.textContent = "—";
+    llmTransFit.textContent = "—";
+    llmSenFit.textContent = "—";
+    llmProbObtain.textContent = "—";
+    llmDiffUpside.textContent = "—";
+
+    llmStrengthsList.innerHTML = passed.length > 0
+      ? passed.map(p => `<li>${escapeHtml(p)}</li>`).join("")
+      : `<li>No LLM evaluation performed (filtered at candidate constraint gate)</li>`;
+
+    llmGapsList.innerHTML = reasons.length > 0
+      ? reasons.map(r => `<li style="color: var(--accent-rose);">${escapeHtml(r)}</li>`).join("")
+      : `<li>Candidate constraint gate exclusion</li>`;
+
+    llmReasoning.textContent = reasons.length > 0
+      ? `Opportunity was excluded by candidate constraint gate before LLM evaluation:\n• ` + reasons.join("\n• ")
+      : "Opportunity excluded by candidate constraint gate.";
+  } else if (isFailed) {
+    llmRecBadge.textContent = "EVALUATION FAILED";
+    llmRecBadge.style.background = "rgba(239, 68, 68, 0.15)";
+    llmRecBadge.style.color = "#ef4444";
+    llmRecBadge.style.borderColor = "rgba(239, 68, 68, 0.3)";
+    llmScorePill.textContent = "SCORE: — (FAILED)";
+    llmRoleFit.textContent = "—";
+    llmExpFit.textContent = "—";
+    llmTransFit.textContent = "—";
+    llmSenFit.textContent = "—";
+    llmProbObtain.textContent = "—";
+    llmDiffUpside.textContent = "—";
+    llmStrengthsList.innerHTML = `<li>Evaluation execution failed</li>`;
+    llmGapsList.innerHTML = `<li>Evaluation execution failed</li>`;
+    llmReasoning.textContent = "LLM evaluation execution failed or was interrupted.";
   } else {
     llmRecBadge.textContent = "PENDING EVALUATION";
     llmRecBadge.style.background = "rgba(245, 158, 11, 0.15)";

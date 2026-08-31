@@ -320,6 +320,9 @@ def load_discovery_data() -> dict:
             job_copy["llm_evaluation"] = eval_map[jid].get("llm_evaluation")
             job_copy["gate_failed"] = eval_map[jid].get("gate_failed", False)
             job_copy["gate_failure_reasons"] = eval_map[jid].get("gate_failure_reasons", [])
+            job_copy["gate_passed_checks"] = eval_map[jid].get("gate_passed_checks", [])
+            if job_copy["gate_failed"]:
+                job_copy["evaluation_status"] = "GATE_REJECTED"
         jobs.append(job_copy)
 
     return {
@@ -745,15 +748,12 @@ class ReviewRequestHandler(SimpleHTTPRequestHandler):
 
     def send_gmail_auth_url(self):
         """Generates OAuth authorization URL or returns configuration error without exposing secrets."""
-        if not oauth_client:
-            self.send_json_response({"error": "OAuth client not initialized."}, 500)
-            return
-
         active_port = getattr(self.server, 'server_port', PORT) if hasattr(self, 'server') else PORT
         canonical_redirect_uri = get_canonical_redirect_uri(port=active_port)
 
         try:
-            url, state = oauth_client.get_authorization_url(port=active_port)
+            client = GoogleOAuthClient(token_store=token_store)
+            url, state = client.get_authorization_url(port=active_port)
             self.send_json_response({
                 "auth_url": url,
                 "state": state,
@@ -789,7 +789,8 @@ class ReviewRequestHandler(SimpleHTTPRequestHandler):
 
         active_port = getattr(self.server, 'server_port', PORT) if hasattr(self, 'server') else PORT
         try:
-            res = oauth_client.exchange_code_for_tokens(code, port=active_port)
+            client = GoogleOAuthClient(token_store=token_store)
+            res = client.exchange_code_for_tokens(code, port=active_port)
             account_email = res.get("account_email", "")
             self.send_response(302)
             self.send_header("Location", f"/discovery?gmail_status=connected&email={urllib.parse.quote(account_email)}")

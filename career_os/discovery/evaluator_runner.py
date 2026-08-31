@@ -149,6 +149,25 @@ class EvaluationRunner:
 
         return metrics
 
+    def evaluate_single_opportunity_by_id(self, opp_id: str) -> bool:
+        """
+        Explicitly evaluates a single opportunity by ID (useful for corrective evaluations).
+        Runs explicit constraint gates, calls LLM, validates, and persists.
+        """
+        opp = self.repo.get_opportunity_by_id(opp_id)
+        if not opp:
+            log.error(f"Opportunity {opp_id} not found.")
+            return False
+
+        gates_passed, passed_checks, failed_checks = run_explicit_constraint_gates(opp)
+        if not gates_passed:
+            log.info(f"Gate rejected {opp_id}: {failed_checks}")
+            self._persist_gate_failed_evaluation(opp_id, opp, passed_checks, failed_checks)
+            return False
+
+        dummy_metrics = {"llm_calls_made": 0}
+        return self._evaluate_single_opportunity(opp, passed_checks, failed_checks, dummy_metrics)
+
     def _persist_reused_evaluation(
         self,
         opp_id: str,

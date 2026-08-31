@@ -211,15 +211,16 @@ class TestEvaluationPersistenceRepair(unittest.TestCase):
         jobs = ws_data["jobs"]
         self.assertGreaterEqual(len(jobs), 129)
 
-        valid_states = {"EVALUATED", "REUSED", "PENDING", "FAILED"}
+        valid_states = {"EVALUATED", "REUSED", "GATE_REJECTED", "PENDING", "FAILED"}
         for job in jobs:
             st = job.get("evaluation_status")
             self.assertIn(st, valid_states, f"Opportunity {job['job_id']} has invalid evaluation_status: {st}")
             if st == "EVALUATED" and not job.get("gate_failed"):
                 self.assertIsNotNone(job["llm_evaluation"])
                 self.assertIsNotNone(job["llm_evaluation"]["recommendation"])
-            elif st == "PENDING":
-                self.assertIsNone(job["llm_evaluation"])
+            elif st == "GATE_REJECTED":
+                self.assertIsNone(job.get("llm_evaluation"))
+                self.assertTrue(job.get("gate_failed"))
             elif st == "PENDING":
                 self.assertIsNone(job["llm_evaluation"])
 

@@ -1,82 +1,82 @@
 {
-  "updated_at": "2026-08-16T19:05:07.192537+00:00",
+  "updated_at": "2026-08-31T14:02:02.674479+00:00",
   "decisions": {
     "job_0129": {
       "job_id": "job_0129",
-      "verdict": "APPLY",
-      "priority": "HIGH",
-      "notes": "Strong fit with Amex compliance background",
-      "reviewed_at": "2026-08-16T17:14:33.592019+00:00"
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T12:46:18.011330+00:00"
     },
     "job_0166": {
       "job_id": "job_0166",
-      "verdict": "APPLY",
-      "priority": "MEDIUM",
-      "notes": "",
-      "reviewed_at": "2026-08-16T17:15:04.353514+00:00"
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T12:48:59.319399+00:00"
     },
     "job_0121": {
       "job_id": "job_0121",
       "verdict": "SKIP",
       "priority": "LOW",
-      "notes": "Location of the job is US",
-      "reviewed_at": "2026-08-16T18:03:17.589244+00:00"
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T12:46:57.026552+00:00"
     },
     "job_0098": {
       "job_id": "job_0098",
       "verdict": "SKIP",
       "priority": "LOW",
       "notes": "Location is US",
-      "reviewed_at": "2026-08-16T18:04:06.960697+00:00"
+      "reviewed_at": "2026-08-31T12:47:05.190539+00:00"
     },
     "job_0067": {
       "job_id": "job_0067",
       "verdict": "SKIP",
       "priority": "LOW",
       "notes": "Location is US",
-      "reviewed_at": "2026-08-16T18:04:23.029741+00:00"
+      "reviewed_at": "2026-08-31T12:47:07.759912+00:00"
     },
     "job_0146": {
       "job_id": "job_0146",
       "verdict": "SKIP",
       "priority": "LOW",
       "notes": "Location is US",
-      "reviewed_at": "2026-08-16T18:04:33.417795+00:00"
+      "reviewed_at": "2026-08-31T12:47:12.227923+00:00"
     },
     "job_0149": {
       "job_id": "job_0149",
       "verdict": "SKIP",
       "priority": "LOW",
       "notes": "Location is US",
-      "reviewed_at": "2026-08-16T18:04:50.902651+00:00"
+      "reviewed_at": "2026-08-31T12:47:13.505932+00:00"
     },
     "job_0043": {
       "job_id": "job_0043",
       "verdict": "SKIP",
       "priority": "LOW",
       "notes": "Location is US",
-      "reviewed_at": "2026-08-16T18:45:49.553852+00:00"
+      "reviewed_at": "2026-08-31T12:47:14.088551+00:00"
     },
     "job_0073": {
       "job_id": "job_0073",
       "verdict": "SKIP",
       "priority": "LOW",
       "notes": "Location is US",
-      "reviewed_at": "2026-08-16T18:45:57.846205+00:00"
+      "reviewed_at": "2026-08-31T12:47:14.929233+00:00"
     },
     "job_0142": {
       "job_id": "job_0142",
       "verdict": "SKIP",
       "priority": "LOW",
       "notes": "Location is US",
-      "reviewed_at": "2026-08-16T18:46:08.304428+00:00"
+      "reviewed_at": "2026-08-31T12:47:16.243704+00:00"
     },
     "job_0124": {
       "job_id": "job_0124",
-      "verdict": "MAYBE",
-      "priority": "MEDIUM",
-      "notes": "",
-      "reviewed_at": "2026-08-16T18:50:15.021128+00:00"
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa",
+      "reviewed_at": "2026-08-31T12:47:58.142689+00:00"
     },
     "job_0123": {
       "job_id": "job_0123",
@@ -103,8 +103,554 @@
       "job_id": "job_0019",
       "verdict": "SKIP",
       "priority": "MEDIUM",
-      "notes": "",
-      "reviewed_at": "2026-08-16T19:05:07.192537+00:00"
+      "notes": "expired no visa or relocation details",
+      "reviewed_at": "2026-08-31T12:44:11.045250+00:00"
+    },
+    "job_0101": {
+      "job_id": "job_0101",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "expired",
+      "reviewed_at": "2026-08-31T12:48:00.267931+00:00"
+    },
+    "job_0074": {
+      "job_id": "job_0074",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "At this time, Capital One will not sponsor a new applicant for employment authorization for this position.",
+      "reviewed_at": "2026-08-31T12:48:04.646556+00:00"
+    },
+    "job_0109": {
+      "job_id": "job_0109",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "not sure if they are helping with relocation or visa",
+      "reviewed_at": "2026-08-31T12:48:07.455015+00:00"
+    },
+    "job_0187": {
+      "job_id": "job_0187",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no relocation or visa detials",
+      "reviewed_at": "2026-08-31T12:48:09.633878+00:00"
+    },
+    "job_0003": {
+      "job_id": "job_0003",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T12:43:23.455946+00:00"
+    },
+    "job_0034": {
+      "job_id": "job_0034",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T12:43:55.819749+00:00"
+    },
+    "job_0095": {
+      "job_id": "job_0095",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T12:44:38.536376+00:00"
+    },
+    "job_0148": {
+      "job_id": "job_0148",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details also expired",
+      "reviewed_at": "2026-08-31T12:45:02.032498+00:00"
+    },
+    "job_0139": {
+      "job_id": "job_0139",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T12:45:34.841365+00:00"
+    },
+    "job_0163": {
+      "job_id": "job_0163",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T12:49:32.083907+00:00"
+    },
+    "job_0029": {
+      "job_id": "job_0029",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T12:49:58.530845+00:00"
+    },
+    "job_0070": {
+      "job_id": "job_0070",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T12:50:06.061883+00:00"
+    },
+    "job_0151": {
+      "job_id": "job_0151",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T12:50:09.319548+00:00"
+    },
+    "job_0042": {
+      "job_id": "job_0042",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T12:50:21.136054+00:00"
+    },
+    "job_0059": {
+      "job_id": "job_0059",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa",
+      "reviewed_at": "2026-08-31T12:50:52.332453+00:00"
+    },
+    "job_0133": {
+      "job_id": "job_0133",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa",
+      "reviewed_at": "2026-08-31T12:51:13.513170+00:00"
+    },
+    "job_0077": {
+      "job_id": "job_0077",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa",
+      "reviewed_at": "2026-08-31T12:51:31.515874+00:00"
+    },
+    "job_0141": {
+      "job_id": "job_0141",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa",
+      "reviewed_at": "2026-08-31T13:03:32.865307+00:00"
+    },
+    "job_0080": {
+      "job_id": "job_0080",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:04:25.718428+00:00"
+    },
+    "job_0041": {
+      "job_id": "job_0041",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:05:19.159775+00:00"
+    },
+    "job_0152": {
+      "job_id": "job_0152",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:05:25.943149+00:00"
+    },
+    "job_0145": {
+      "job_id": "job_0145",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:05:33.186014+00:00"
+    },
+    "job_0018": {
+      "job_id": "job_0018",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:06:04.793464+00:00"
+    },
+    "job_0006": {
+      "job_id": "job_0006",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:06:56.137169+00:00"
+    },
+    "job_0008": {
+      "job_id": "job_0008",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:07:19.489702+00:00"
+    },
+    "job_0013": {
+      "job_id": "job_0013",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:07:27.773633+00:00"
+    },
+    "job_0064": {
+      "job_id": "job_0064",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:08:05.412321+00:00"
+    },
+    "job_0096": {
+      "job_id": "job_0096",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:08:46.100796+00:00"
+    },
+    "job_0021": {
+      "job_id": "job_0021",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:08:49.136856+00:00"
+    },
+    "job_0085": {
+      "job_id": "job_0085",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:10:57.158597+00:00"
+    },
+    "job_0076": {
+      "job_id": "job_0076",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:12:56.249467+00:00"
+    },
+    "job_0023": {
+      "job_id": "job_0023",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:41:42.035923+00:00"
+    },
+    "job_0193": {
+      "job_id": "job_0193",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:42:58.577092+00:00"
+    },
+    "job_0100": {
+      "job_id": "job_0100",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:43:16.064090+00:00"
+    },
+    "job_0116": {
+      "job_id": "job_0116",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:43:50.236122+00:00"
+    },
+    "job_0104": {
+      "job_id": "job_0104",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:45:51.217603+00:00"
+    },
+    "job_0115": {
+      "job_id": "job_0115",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:45:57.434594+00:00"
+    },
+    "job_0118": {
+      "job_id": "job_0118",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:46:03.287998+00:00"
+    },
+    "job_0069": {
+      "job_id": "job_0069",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:46:08.676322+00:00"
+    },
+    "job_0072": {
+      "job_id": "job_0072",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:46:13.108279+00:00"
+    },
+    "job_0103": {
+      "job_id": "job_0103",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:47:41.387732+00:00"
+    },
+    "job_0108": {
+      "job_id": "job_0108",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:47:49.260937+00:00"
+    },
+    "job_0176": {
+      "job_id": "job_0176",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:48:00.123401+00:00"
+    },
+    "job_0179": {
+      "job_id": "job_0179",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:48:06.161676+00:00"
+    },
+    "job_0189": {
+      "job_id": "job_0189",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:48:14.795552+00:00"
+    },
+    "job_0194": {
+      "job_id": "job_0194",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:48:20.287221+00:00"
+    },
+    "job_0168": {
+      "job_id": "job_0168",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:48:28.243834+00:00"
+    },
+    "job_0099": {
+      "job_id": "job_0099",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:48:34.824174+00:00"
+    },
+    "job_0164": {
+      "job_id": "job_0164",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:48:45.261624+00:00"
+    },
+    "job_0107": {
+      "job_id": "job_0107",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:48:49.887667+00:00"
+    },
+    "job_0010": {
+      "job_id": "job_0010",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:48:55.927527+00:00"
+    },
+    "job_0011": {
+      "job_id": "job_0011",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:49:00.567612+00:00"
+    },
+    "job_0015": {
+      "job_id": "job_0015",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:49:05.459771+00:00"
+    },
+    "job_0071": {
+      "job_id": "job_0071",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:50:37.653316+00:00"
+    },
+    "job_0027": {
+      "job_id": "job_0027",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:50:45.637661+00:00"
+    },
+    "job_0060": {
+      "job_id": "job_0060",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:50:56.377600+00:00"
+    },
+    "job_0090": {
+      "job_id": "job_0090",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:51:01.841201+00:00"
+    },
+    "job_0005": {
+      "job_id": "job_0005",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:51:14.867976+00:00"
+    },
+    "job_0150": {
+      "job_id": "job_0150",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:51:23.483818+00:00"
+    },
+    "job_0135": {
+      "job_id": "job_0135",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:52:05.464263+00:00"
+    },
+    "job_0033": {
+      "job_id": "job_0033",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:52:13.699622+00:00"
+    },
+    "job_0111": {
+      "job_id": "job_0111",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:52:47.233506+00:00"
+    },
+    "job_0113": {
+      "job_id": "job_0113",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:53:12.983107+00:00"
+    },
+    "job_0173": {
+      "job_id": "job_0173",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:53:24.083577+00:00"
+    },
+    "job_0169": {
+      "job_id": "job_0169",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:53:34.127888+00:00"
+    },
+    "job_0144": {
+      "job_id": "job_0144",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:53:40.969056+00:00"
+    },
+    "job_0030": {
+      "job_id": "job_0030",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:55:12.373366+00:00"
+    },
+    "job_0032": {
+      "job_id": "job_0032",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:55:20.866064+00:00"
+    },
+    "job_0138": {
+      "job_id": "job_0138",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:55:34.927791+00:00"
+    },
+    "job_0167": {
+      "job_id": "job_0167",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:55:41.970856+00:00"
+    },
+    "job_0035": {
+      "job_id": "job_0035",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:55:46.103543+00:00"
+    },
+    "job_0007": {
+      "job_id": "job_0007",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:55:50.939676+00:00"
+    },
+    "job_0185": {
+      "job_id": "job_0185",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:59:11.827969+00:00"
+    },
+    "job_0066": {
+      "job_id": "job_0066",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:59:19.654765+00:00"
+    },
+    "job_0062": {
+      "job_id": "job_0062",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:59:26.911516+00:00"
+    },
+    "job_0038": {
+      "job_id": "job_0038",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:59:31.125224+00:00"
+    },
+    "job_0028": {
+      "job_id": "job_0028",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T13:59:35.508867+00:00"
+    },
+    "job_0175": {
+      "job_id": "job_0175",
+      "verdict": "SKIP",
+      "priority": "LOW",
+      "notes": "no visa or relocation details",
+      "reviewed_at": "2026-08-31T14:02:02.674479+00:00"
     }
   }
 }

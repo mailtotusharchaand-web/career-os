@@ -38,7 +38,7 @@ DEFAULT_CV = "Tushar_Chaand_CV.docx"
 CAPABILITIES_OUTPUT = "candidate_capabilities.json"
 HYPOTHESES_OUTPUT = "opportunity_hypotheses.json"
 INTENTS_OUTPUT = "search_intents.json"
-DEFAULT_DISCOVERY_OUTPUT = "india_discovery_results.json"
+DEFAULT_DISCOVERY_OUTPUT = "run_0003_results.json"
 SQLITE_DB_FILE = "career_os.db"
 
 
@@ -545,6 +545,9 @@ def run_dynamic_india_discovery(
         "health_records": all_health_records,
         "results": deduped_india_jobs,
     }
+
+    if Path(output_path).name == "india_discovery_results.json" and active_run_id != "run_0001":
+        output_path = f"{active_run_id}_results.json"
 
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(output_payload, f, indent=2, default=str)

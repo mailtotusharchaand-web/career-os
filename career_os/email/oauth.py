@@ -46,8 +46,8 @@ class GoogleOAuthClient:
         token_store: Optional[TokenStore] = None,
     ):
         load_dotenv()
-        self.client_id = client_id or os.getenv("GMAIL_CLIENT_ID", "").strip()
-        self.client_secret = client_secret or os.getenv("GMAIL_CLIENT_SECRET", "").strip()
+        self.client_id = client_id.strip() if client_id is not None else os.getenv("GMAIL_CLIENT_ID", "").strip()
+        self.client_secret = client_secret.strip() if client_secret is not None else os.getenv("GMAIL_CLIENT_SECRET", "").strip()
         self.port = port
         self.redirect_uri = redirect_uri or get_canonical_redirect_uri(port=port)
         self.token_store = token_store or LocalSecureFileTokenStore()

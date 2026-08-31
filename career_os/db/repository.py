@@ -567,7 +567,9 @@ class CareerOSRepository:
                 first_src = opp_sources[0] if opp_sources else {}
 
                 eval_status = r["evaluation_status"]
-                if not eval_status:
+                if r["gate_failed"]:
+                    eval_status = "GATE_REJECTED"
+                elif not eval_status:
                     if r["is_reused"]:
                         eval_status = "REUSED"
                     elif r["recommendation"] is not None or r["reasoning"] or r["score"] is not None:
